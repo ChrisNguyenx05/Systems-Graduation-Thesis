@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="portal-config.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -86,8 +87,8 @@
         </div>
         <div class="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-lg border border-slate-800/90 text-center min-w-[320px]">
           <div class="border-r border-slate-800/80 pr-2"><div class="text-[10px] uppercase font-mono text-slate-500">Scope</div><div class="text-sm font-bold text-white font-mono">6 Systems</div></div>
-          <div class="border-r border-slate-800/80 px-2"><div class="text-[10px] uppercase font-mono text-slate-500">User</div><div class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded mt-0.5">admin123</div></div>
-          <div class="pl-2"><div class="text-[10px] uppercase font-mono text-slate-500">Password</div><div class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded mt-0.5">admin123</div></div>
+          <div class="border-r border-slate-800/80 px-2"><div class="text-[10px] uppercase font-mono text-slate-500">Access</div><div class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded mt-0.5">Protected</div></div>
+          <div class="pl-2"><div class="text-[10px] uppercase font-mono text-slate-500">Credentials</div><div class="text-xs font-mono font-bold text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded mt-0.5">Not displayed</div></div>
         </div>
       </div>
       <div class="flex items-center space-x-2 mt-5 pt-4 border-t border-slate-800/60 overflow-x-auto text-xs">
@@ -163,12 +164,13 @@
   </footer>
 
   <script>
+    const serviceUrls = PORTAL_CONFIG.serviceUrls;
     const systems = [
-      { id: 'sys01', category: 'ai', badge: 'SYS-01 - ANALYTICS', color: 'purple', icon: 'fa-chart-line', title: 'Predictive Analytics Web', subtitle: 'Streamlit Interactive Dashboard', description: 'Visualizes real-time Klines, market signals, anomaly indicators, and model outputs for business users.', port: '8501', auth: 'No login', href: 'http://localhost:8501', cta: 'Open Dashboard', docs: 'Plan/systems_docs/01_Business_Predictive_Analytics_Dashboard.html' },
-      { id: 'sys02', category: 'data', badge: 'SYS-02 - ORCHESTRATION', color: 'teal', icon: 'fa-diagram-project', title: 'Data Pipeline Orchestration', subtitle: 'Apache Airflow 2.8.1', description: 'Schedules Binance ingestion, Data Quality gates, Bronze to Silver transformations, Gold loading, and ML retraining triggers.', port: '8085', auth: 'admin123 / admin123', href: 'http://localhost:8085', cta: 'Open Airflow', docs: 'Plan/systems_docs/02_Data_Pipeline_Orchestration_System.html' },
-      { id: 'sys05', category: 'data', badge: 'SYS-05 - LAKEHOUSE', color: 'emerald', icon: 'fa-database', title: 'Lakehouse and Database Portal', subtitle: 'MinIO, ClickHouse, PostgreSQL', description: 'Controls Bronze, Silver, and Gold lakehouse storage, analytical tables, quality result tables, and batch status history.', port: '9001 / 8123', auth: 'admin123 / admin123', href: 'http://localhost:9001', cta: 'Open MinIO', docs: 'Plan/systems_docs/05_Lakehouse_Database_Management_Portal.html' },
-      { id: 'sys04', category: 'ai', badge: 'SYS-04 - MLOPS', color: 'blue', icon: 'fa-brain', title: 'MLOps and Model Governance', subtitle: 'FastAPI and MLflow', description: 'Serves prediction APIs, tracks experiments, manages model versions, and blocks retraining when Gold data is stale or invalid.', port: '8000 / 5000', auth: 'No login', href: 'http://localhost:8000/docs', cta: 'Open API Docs', docs: 'Plan/systems_docs/04_MLOps_Model_Governance_Center.html' },
-      { id: 'sys03', category: 'ops', badge: 'SYS-03 - MONITORING', color: 'orange', icon: 'fa-server', title: 'Operations and Telemetry Center', subtitle: 'Prometheus and Grafana', description: 'Monitors container health, pipeline failures, Data Quality failures, ClickHouse freshness, resource usage, and SLA status.', port: '3000 / 9090', auth: 'admin / admin123', href: 'http://localhost:3000', cta: 'Open Grafana', docs: 'Plan/systems_docs/03_Infrastructure_Operations_Center.html' },
+      { id: 'sys01', category: 'ai', badge: 'SYS-01 - ANALYTICS', color: 'purple', icon: 'fa-chart-line', title: 'Predictive Analytics Web', subtitle: 'Streamlit Interactive Dashboard', description: 'Visualizes real-time Klines, market signals, anomaly indicators, and model outputs for business users.', port: '8501', auth: 'No login', href: serviceUrls.sys01, cta: 'Open Dashboard', docs: 'Plan/systems_docs/01_Business_Predictive_Analytics_Dashboard.html' },
+      { id: 'sys02', category: 'data', badge: 'SYS-02 - ORCHESTRATION', color: 'teal', icon: 'fa-diagram-project', title: 'Data Pipeline Orchestration', subtitle: 'Apache Airflow 2.8.1', description: 'Schedules Binance ingestion, Data Quality gates, Bronze to Silver transformations, Gold loading, and ML retraining triggers.', port: '8085', auth: 'Cloudflare Access', href: serviceUrls.sys02, cta: 'Open Airflow', docs: 'Plan/systems_docs/02_Data_Pipeline_Orchestration_System.html' },
+      { id: 'sys05', category: 'data', badge: 'SYS-05 - LAKEHOUSE', color: 'emerald', icon: 'fa-database', title: 'Lakehouse and Database Portal', subtitle: 'MinIO, ClickHouse, PostgreSQL', description: 'Controls Bronze, Silver, and Gold lakehouse storage, analytical tables, quality result tables, and batch status history.', port: '9001 / 8123', auth: 'Cloudflare Access', href: serviceUrls.sys05, cta: 'Open MinIO', docs: 'Plan/systems_docs/05_Lakehouse_Database_Management_Portal.html' },
+      { id: 'sys04', category: 'ai', badge: 'SYS-04 - MLOPS', color: 'blue', icon: 'fa-brain', title: 'MLOps and Model Governance', subtitle: 'FastAPI and MLflow', description: 'Serves prediction APIs, tracks experiments, manages model versions, and blocks retraining when Gold data is stale or invalid.', port: '8000 / 5000', auth: 'No login', href: serviceUrls.sys04, cta: 'Open API Docs', docs: 'Plan/systems_docs/04_MLOps_Model_Governance_Center.html' },
+      { id: 'sys03', category: 'ops', badge: 'SYS-03 - MONITORING', color: 'orange', icon: 'fa-server', title: 'Operations and Telemetry Center', subtitle: 'Prometheus and Grafana', description: 'Monitors container health, pipeline failures, Data Quality failures, ClickHouse freshness, resource usage, and SLA status.', port: '3000 / 9090', auth: 'Cloudflare Access', href: serviceUrls.sys03, cta: 'Open Grafana', docs: 'Plan/systems_docs/03_Infrastructure_Operations_Center.html' },
       { id: 'sys06', category: 'ops', badge: 'SYS-06 - ALERTING', color: 'sky', icon: 'fa-bell', title: 'Notification and Alert Dispatcher', subtitle: 'Telegram Bot and incident events', description: 'Sends alerts for API failures, Data Quality failures, stale Gold data, SLA misses, and model retraining failures.', port: 'Bot API', auth: 'Token based', href: 'https://t.me/', cta: 'Open Telegram', docs: 'Plan/systems_docs/06_Operational_Alerting_Notification_System.html', staticStatus: 'Webhook Ready' }
     ];
 
@@ -181,7 +183,6 @@
       { source: 'PH.BINANCE.FUTURES', company: 'fintech_group_ph', product: 'BINANCE_LIQUIDATIONS', inputDay: '2026-08-21', stage: 'Collect', collectStatus: 'Done', qualityStatus: 'Passed', collectStart: '2026-08-21 23:45:00', transformStatus: 'All done', transformCount: 37, pipelineStatus: 'Done', goldRows: 37, batchId: 'binance_liquidations_20260821T234500Z' }
     ];
 
-    const serviceUrls = { sys01: 'http://localhost:8501', sys02: 'http://localhost:8085', sys03: 'http://localhost:3000', sys04: 'http://localhost:8000', sys05: 'http://localhost:9001' };
     const statusStyles = { Done: 'bg-emerald-500/90 text-white', Passed: 'bg-emerald-500/90 text-white', 'All done': 'bg-emerald-500/90 text-white', Failed: 'bg-rose-500/95 text-white', Blocked: 'bg-rose-500/95 text-white', Running: 'bg-blue-500/90 text-white', Queued: 'bg-amber-500/90 text-slate-950', 'API queued': 'bg-slate-200 text-slate-800 border border-slate-300', Pending: 'bg-slate-500/80 text-white' };
     let compactPipelineColumns = false;
 

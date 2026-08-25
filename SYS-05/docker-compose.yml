@@ -10,11 +10,11 @@ services:
     container_name: minio_s3
     restart: always
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:${MINIO_API_PORT:?Set MINIO_API_PORT in .env}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:?Set MINIO_CONSOLE_PORT in .env}:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin123}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-admin123}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
     command: server /data --console-address ":9001"
     volumes:
       - ./data/minio:/data
@@ -35,7 +35,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio_s3:9000 ${MINIO_ACCESS_KEY:-admin123} ${MINIO_SECRET_KEY:-admin123};
+      /usr/bin/mc alias set myminio http://minio_s3:9000 ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env} ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env};
       /usr/bin/mc mb --ignore-existing myminio/${BUCKET_BRONZE:-crypto-bronze};
       /usr/bin/mc mb --ignore-existing myminio/${BUCKET_SILVER:-crypto-silver};
       /usr/bin/mc mb --ignore-existing myminio/${BUCKET_GOLD:-crypto-gold};
@@ -55,12 +55,12 @@ services:
     container_name: clickhouse_server
     restart: always
     ports:
-      - "8123:8123"   # ClickHouse HTTP Interface / Web UI
-      - "9004:9000"   # ClickHouse Native TCP Interface (mapped to 9004 on host)
+      - "127.0.0.1:${CLICKHOUSE_HTTP_PORT:?Set CLICKHOUSE_HTTP_PORT in .env}:8123"   # ClickHouse HTTP Interface / Web UI
+      - "127.0.0.1:${CLICKHOUSE_NATIVE_PORT:?Set CLICKHOUSE_NATIVE_PORT in .env}:9000"   # ClickHouse Native TCP Interface (mapped to 9004 on host)
     environment:
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-admin123}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-admin123}
-      CLICKHOUSE_DEFAULT_USER_PASSWORD: ${CLICKHOUSE_PASSWORD:-admin123}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:?Set CLICKHOUSE_USER in .env}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}
+      CLICKHOUSE_DEFAULT_USER_PASSWORD: ${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}
     volumes:
       - ./data/clickhouse:/var/lib/clickhouse
       - ./sql/init_clickhouse_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql
@@ -83,15 +83,15 @@ services:
     container_name: sys05_postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:?Set POSTGRES_HOST_PORT in .env}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-admin123}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
-      POSTGRES_DB: ${POSTGRES_DB:-enterprise_metadata}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin123}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env}"]
       interval: 5s
       timeout: 5s
       retries: 5
