@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYS-06: Operational Alerting & Notification System Documentation A-Z</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <style>
+        :root {
+            --bg: #06080f; --bg-card: rgba(15, 23, 42, 0.8); --border: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(99, 102, 241, 0.35); --text: #f1f5f9; --text2: #94a3b8;
+            --indigo: #6366f1; --violet: #a855f7; --cyan: #06b6d4; --emerald: #10b981; --rose: #f43f5e; --amber: #f59e0b; --sky: #38bdf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.65; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+        .header { text-align: center; margin-bottom: 2.5rem; }
+        .header h1 { font-size: 2.5rem; background: linear-gradient(135deg, #fff, var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { display: inline-flex; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; background: rgba(6,182,212,0.15); color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem; backdrop-filter: blur(12px); }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        .diagram-box { background: #090d16; border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; overflow-x: auto; display: flex; justify-content: center; }
+        .code-box { background: #030712; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; color: var(--sky); overflow-x: auto; line-height: 1.55; margin: 1rem 0; white-space: pre; }
+        code { font-family: 'JetBrains Mono', monospace; color: var(--sky); background: rgba(99,102,241,0.1); padding: 0.2em 0.4em; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <span class="badge"><i class="fa-solid fa-bell"></i> SYS-06 DOCUMENTATION A-Z</span>
+        <h1 style="margin-top: 0.5rem;">Operational Alerting & Notification System</h1>
+        <p style="color:var(--text2)">Kênh gửi thông báo cảnh báo sự cố hạ tầng & thao túng thị trường thời gian thực qua Telegram Bot API</p>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-bullseye" style="color:var(--cyan)"></i> 1. Mục Tiêu & Mục Đích Hệ Thống</h2>
+        <p style="color:var(--text2); margin-top:0.5rem;">
+            SYS-06 phát đi tin nhắn cảnh báo khẩn cấp tới smartphone của đội ngũ vận hành trong thời gian dưới 3 giây. Hệ thống tích hợp bộ lọc chống trùng lặp tin nhắn (Deduplication Window 300s) và giới hạn tần suất (Rate Limiter Max 10 msgs/min).
+        </p>
+    </div>
+
+    <div class="grid-3">
+        <div class="card" style="border-left: 4px solid var(--rose);">
+            <h3>🔴 CRITICAL ALERT</h3>
+            <p style="color:var(--text2)">Cảnh báo sự cố sập container, Kafka Lag &gt; 5000, hoặc thao túng Pump & Dump.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--amber);">
+            <h3>⚠️ WARNING RISK</h3>
+            <p style="color:var(--text2)">Cảnh báo phát hiện giao dịch gian lận thẻ (Fraud Score &gt; 0.85) hoặc CPU Host &gt; 85%.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--emerald);">
+            <h3>🟢 SYSTEM INFO</h3>
+            <p style="color:var(--text2)">Thông báo Airflow DAG retrain AI model thành công.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-diagram-project" style="color:var(--indigo)"></i> 2. Alert Dispatcher Workflow</h2>
+        <div class="diagram-box">
+            <div class="mermaid">
+            flowchart TD
+                A["📩 Receive Trigger Event Payload"] --> B{"Check Deduplication Cache"}
+                B -- Yes (Duplicate) --> C["⏩ Suppress Alert"]
+                B -- No (New Alert) --> D{"Check Rate Limiter (< 10 msgs/min)"}
+                D -- OK --> F["🎨 Format Markdown Message with Emojis"]
+                F --> G["🚀 HTTP POST to Telegram Bot API"]
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-code" style="color:var(--sky)"></i> 3. Telegram Dispatcher Python Code (`alert_dispatcher.py`)</h2>
+        <div class="code-box">import requests
+
+def send_telegram_alert(title: str, message: str, level: str = "CRITICAL"):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    formatted_text = f"🔴 *[{level}]* - *{title}*\n-------------------\n{message}"
+    requests.post(url, json={"chat_id": CHAT_ID, "text": formatted_text, "parse_mode": "Markdown"})</div>
+    </div>
+</div>
+</body>
+</html>

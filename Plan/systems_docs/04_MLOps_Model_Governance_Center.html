@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYS-04: MLOps & Model Governance Center Documentation A-Z</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <style>
+        :root {
+            --bg: #06080f; --bg-card: rgba(15, 23, 42, 0.8); --border: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(99, 102, 241, 0.35); --text: #f1f5f9; --text2: #94a3b8;
+            --indigo: #6366f1; --violet: #a855f7; --cyan: #06b6d4; --emerald: #10b981; --rose: #f43f5e; --amber: #f59e0b; --sky: #38bdf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.65; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+        .header { text-align: center; margin-bottom: 2.5rem; }
+        .header h1 { font-size: 2.5rem; background: linear-gradient(135deg, #fff, var(--amber)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { display: inline-flex; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem; backdrop-filter: blur(12px); }
+        .diagram-box { background: #090d16; border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; overflow-x: auto; display: flex; justify-content: center; }
+        .table-wrap { overflow-x: auto; margin-top: 1rem; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { background: rgba(245,158,11,0.1); padding: 0.8rem 1rem; text-align: left; color: var(--text); border-bottom: 1px solid var(--border); }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text2); }
+        .code-box { background: #030712; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; color: var(--sky); overflow-x: auto; line-height: 1.55; margin: 1rem 0; white-space: pre; }
+        code { font-family: 'JetBrains Mono', monospace; color: var(--sky); background: rgba(99,102,241,0.1); padding: 0.2em 0.4em; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <span class="badge"><i class="fa-solid fa-brain"></i> SYS-04 DOCUMENTATION A-Z</span>
+        <h1 style="margin-top: 0.5rem;">MLOps & Model Governance Center</h1>
+        <p style="color:var(--text2)">Quản lý phiên bản mô hình AI (MLflow Registry) & Phục vụ dự báo RESTful (FastAPI)</p>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-bullseye" style="color:var(--amber)"></i> 1. Mục Tiêu & Mục Đích Hệ Thống</h2>
+        <p style="color:var(--text2); margin-top:0.5rem;">
+            SYS-04 quản lý toàn bộ vòng đời của các mô hình AI/ML (LSTM Price Forecast, Isolation Forest Anomaly, LightGBM Fraud Detection). Mô hình được theo dõi thí nghiệm trên MLflow UI (Port 5000) và nạp tự động vào FastAPI Serving Engine (Port 8000) để phản hồi yêu cầu dự báo dưới 50ms mà không gây gián đoạn hệ thống (Zero-downtime hot-reload).
+        </p>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-network-wired" style="color:var(--cyan)"></i> 2. FastAPI REST Endpoints Specs</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Method</th><th>Endpoint</th><th>Mô Tả Chức Năng</th><th>Latency SLA</th></tr></thead>
+                <tbody>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/predict/price</code></td><td>Dự báo giá nến 15m/60m (LSTM PyTorch Model)</td><td>&lt; 50ms</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/predict/anomaly</code></td><td>Tính Anomaly Score (Isolation Forest Model)</td><td>&lt; 30ms</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/predict/fraud</code></td><td>Dự đoán giao dịch gian lận thẻ (LightGBM Model)</td><td>&lt; 40ms</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-diagram-project" style="color:var(--indigo)"></i> 3. MLOps Model Lifecycle Diagram</h2>
+        <div class="diagram-box">
+            <div class="mermaid">
+            sequenceDiagram
+                actor MLE as AI Engineer
+                participant MLF as MLflow Registry (5000)
+                participant API as FastAPI Serving (8000)
+                participant UI as SYS-01 Dashboard
+                MLE->>MLF: Log Train Metrics (RMSE/AUC)
+                MLE->>MLF: Promote Model to 'Production Stage'
+                API->>MLF: Auto Hot-reload New Model Weights
+                UI->>API: POST /api/v1/predict/price
+                API-->>UI: Return JSON Predictions (&lt; 50ms)
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-code" style="color:var(--sky)"></i> 4. FastAPI Production Server Code (`main.py`)</h2>
+        <div class="code-box">from fastapi import FastAPI
+from pydantic import BaseModel
+import mlflow.pyfunc
+
+app = FastAPI(title="MLOps Serving API")
+model = mlflow.pyfunc.load_model("models:/Price_Forecast_LSTM/Production")
+
+class PriceRequest(BaseModel):
+    symbol: str
+    recent_ohlcv: list
+
+@app.post("/api/v1/predict/price")
+def predict_price(payload: PriceRequest):
+    preds = model.predict(payload.recent_ohlcv)
+    return {"predicted_price_15m": float(preds[0][0]), "trend": "BULLISH"}</div>
+    </div>
+</div>
+</body>
+</html>

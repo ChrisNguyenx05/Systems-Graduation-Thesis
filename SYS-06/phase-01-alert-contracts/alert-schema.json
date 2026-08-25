@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OperationalAlertPayload",
+  "description": "Standard alert event schema for SYS-06 Operational Alerting & Notification System",
+  "type": "object",
+  "required": [
+    "alert_type",
+    "level",
+    "source_system",
+    "event",
+    "deduplicate_key",
+    "message",
+    "timestamp"
+  ],
+  "properties": {
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "MARKET_ANOMALY",
+        "FRAUD_TRANSACTION",
+        "INFRASTRUCTURE_FAILURE",
+        "PIPELINE_FAILURE",
+        "DATA_QUALITY",
+        "STORAGE_FAILURE",
+        "MODEL_GOVERNANCE",
+        "BUSINESS_RISK",
+        "SYSTEM_HEALTH"
+      ],
+      "description": "High-level categorization of the alert."
+    },
+    "level": {
+      "type": "string",
+      "enum": ["CRITICAL", "WARNING", "INFO"],
+      "description": "Severity level of the alert."
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["SYS-01", "SYS-02", "SYS-03", "SYS-04", "SYS-05", "SYS-06"],
+      "description": "Identifier of the system originating the alert."
+    },
+    "event": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]+$",
+      "description": "Unique event identifier code, in UPPER_SNAKE_CASE."
+    },
+    "deduplicate_key": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255,
+      "description": "Stable deduplication key used to suppress repeated alerts within the 300s window."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable summary or explanation of the alert condition."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the event (e.g. 2026-08-23T11:45:00Z)."
+    },
+    "receiver_roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "devops_sre",
+          "data_engineer",
+          "ml_engineer",
+          "risk_manager",
+          "trader",
+          "compliance",
+          "all"
+        ]
+      },
+      "default": ["devops_sre"],
+      "description": "Target audience roles that should receive this notification."
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["telegram", "slack", "console", "email", "sms"]
+      },
+      "default": ["telegram"],
+      "description": "Delivery channels requested for this alert."
+    },
+    "action_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL pointing to relevant dashboard, log viewer or portal for remediation."
+    },
+    "suggested_action": {
+      "type": "string",
+      "description": "Optional quick actionable recommendation for on-call personnel."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Flexible key-value payload containing contextual metric details.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

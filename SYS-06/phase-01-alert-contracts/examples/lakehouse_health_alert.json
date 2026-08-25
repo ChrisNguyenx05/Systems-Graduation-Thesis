@@ -1,0 +1,19 @@
+{
+  "alert_type": "STORAGE_FAILURE",
+  "level": "CRITICAL",
+  "source_system": "SYS-05",
+  "event": "CLICKHOUSE_CLUSTER_UNREACHABLE",
+  "deduplicate_key": "storage_failure:clickhouse_cluster:unreachable",
+  "message": "Không thể kết nối tới ClickHouse server tại cổng 8123 (ConnectionRefusedError).",
+  "timestamp": "2026-08-23T11:49:00Z",
+  "receiver_roles": ["data_engineer", "devops_sre"],
+  "channels": ["telegram", "slack"],
+  "action_url": "http://localhost:8123/ping",
+  "suggested_action": "Kiểm tra log ClickHouse server và khởi động lại dịch vụ qua docker-compose.",
+  "metadata": {
+    "host": "clickhouse-server",
+    "port": 8123,
+    "error": "ConnectionRefusedError(111, 'Connection refused')",
+    "consecutive_failures": 5
+  }
+}

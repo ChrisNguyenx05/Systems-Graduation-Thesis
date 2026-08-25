@@ -1,0 +1,13 @@
+# Credentials and generated Python artifacts
+.env
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+logs/
+
+# Docker bind-mounted runtime state; recreated by the services when required.
+data/clickhouse/
+data/postgres/
+data/minio/

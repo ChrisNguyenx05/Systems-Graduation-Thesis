@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYS-01: Business & Predictive Analytics Dashboard Documentation A-Z</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <style>
+        :root {
+            --bg: #06080f; --bg-card: rgba(15, 23, 42, 0.8); --border: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(99, 102, 241, 0.35); --text: #f1f5f9; --text2: #94a3b8;
+            --indigo: #6366f1; --violet: #a855f7; --cyan: #06b6d4; --emerald: #10b981; --rose: #f43f5e; --sky: #38bdf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.65; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+        .header { text-align: center; margin-bottom: 2.5rem; }
+        .header h1 { font-size: 2.5rem; background: linear-gradient(135deg, #fff, var(--indigo)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { display: inline-flex; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; background: rgba(99,102,241,0.15); color: var(--sky); border: 1px solid var(--border-accent); }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem; backdrop-filter: blur(12px); }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        .diagram-box { background: #090d16; border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; overflow-x: auto; display: flex; justify-content: center; }
+        .code-box { background: #030712; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; color: var(--sky); overflow-x: auto; line-height: 1.55; margin: 1rem 0; white-space: pre; }
+        .mockup-ui { background: #0f172a; border: 1px solid var(--border-accent); border-radius: 14px; padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text2); margin: 1rem 0; }
+        code { font-family: 'JetBrains Mono', monospace; color: var(--sky); background: rgba(99,102,241,0.1); padding: 0.2em 0.4em; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <span class="badge"><i class="fa-solid fa-chart-line"></i> SYS-01 DOCUMENTATION A-Z</span>
+        <h1 style="margin-top: 0.5rem;">Business & Predictive Analytics Dashboard</h1>
+        <p style="color:var(--text2)">Front-facing UI trực quan hóa giá Real-time, dự báo AI và gắn cờ gian lận / bất thường</p>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-bullseye" style="color:var(--indigo)"></i> 1. Mục Tiêu & Mục Đích Hệ Thống</h2>
+        <p style="color:var(--text2); margin-top:0.5rem;">
+            SYS-01 đóng vai trò mặt tiền trực quan hóa dữ liệu cho Traders và Executives. Hệ thống hiển thị biểu đồ nến K-lines thời gian thực từ sàn Binance, lồng ghép dải dự báo AI 15m/60m từ mô hình LSTM/XGBoost, lồng ghép marker pin đỏ 🔴 cảnh báo biến động bất thường từ Isolation Forest, và hiển thị danh sách giao dịch gian lận bị mô hình LightGBM chặn.
+        </p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <h3><i class="fa-solid fa-microchip" style="color:var(--cyan)"></i> 2. Tech Stack & Rationale</h3>
+            <ul style="margin-left: 1.2rem; color: var(--text2); margin-top: 0.5rem;">
+                <li><strong>Streamlit Framework</strong>: Tốc độ phát triển UI nhanh bằng Python.</li>
+                <li><strong>Plotly Financial Charts</strong>: Biểu đồ nến Nhật mượt mà render qua WebGL Canvas.</li>
+                <li><strong>clickhouse-connect</strong>: Truy vấn ClickHouse Database tốc độ siêu tốc.</li>
+                <li><strong>Binance WebSocket</strong>: Luồng nạp dữ liệu Tick real-time &lt; 100ms.</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3><i class="fa-solid fa-stopwatch" style="color:var(--rose)"></i> 3. Constraints & SLA</h3>
+            <ul style="margin-left: 1.2rem; color: var(--text2); margin-top: 0.5rem;">
+                <li><strong>WebSocket Tick Latency</strong>: &lt; 100ms.</li>
+                <li><strong>ClickHouse Polling Cache</strong>: 5 giây.</li>
+                <li><strong>FastAPI AI Prediction Latency</strong>: &lt; 200ms.</li>
+                <li><strong>Max Chart Candles</strong>: Tối đa 2,000 nến để tránh treo RAM.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-diagram-project" style="color:var(--emerald)"></i> 4. Sơ Đồ Luồng Xử Lý (Sequence Diagram)</h2>
+        <div class="diagram-box">
+            <div class="mermaid">
+            sequenceDiagram
+                actor User as Trader / Executive
+                participant ST as SYS-01 Streamlit UI
+                participant CH as ClickHouse DB
+                participant API as SYS-04 FastAPI Serving
+                participant WS as Binance WebSocket
+                User->>ST: Access http://localhost:8501
+                ST->>CH: Query 200 OHLCV Candles
+                ST->>API: POST /api/v1/predict/price
+                ST->>WS: Open WebSocket Connection
+                ST->>ST: Render Plotly Canvas + AI Overlay Line + Anomaly Markers
+                ST-->>User: Display Interactive Financial Dashboard
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-desktop" style="color:var(--violet)"></i> 5. Bố Cục Giao Diện UI Wireframe</h2>
+        <div class="mockup-ui">
++-----------------------------------------------------------------------------------+
+| HEADER: Financial Analytics Platform | BTC/USDT: $64,250 (+2.45%)               |
++-------------------------------+---------------------------------------------------+
+| KPI METRIC CARDS              | AI PREDICTION BANNER                              |
+| • 24h Volume: $1.2B           | [🔮 AI Forecast] Predicted BTC +0.85% (15m)       |
+| • Fraud Rate: 0.03%           | [🔴 Anomaly Pin] Pump Signal at 10:14 AM         |
++-------------------------------+---------------------------------------------------+
+| MAIN CHART: Candlestick OHLCV + SMA 20 (Plotly WebGL Canvas)                      |
+| • Purple Dashed Line: Path dự báo AI LSTM 15m/60m                                 |
+| • Red Pin 🔴: Điểm bất thường Isolation Forest                                    |
++-----------------------------------------------------------------------------------+
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-code" style="color:var(--sky)"></i> 6. Mã Nguồn Sản Xuất Triển Khai (`app.py`)</h2>
+        <div class="code-box">import streamlit as st
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pandas as pd
+import requests
+
+st.set_page_config(page_title="SYS-01 Financial Dashboard", layout="wide")
+st.title("📈 Real-time Analytics & Fraud Dashboard")
+
+# Fetch AI Prediction
+res = requests.post("http://fastapi_serving:8000/api/v1/predict/price", json={"symbol": "BTCUSDT", "recent_ohlcv": [...]})
+pred = res.json() if res.status_code == 200 else {"predicted_price_15m": 64800}
+
+# Render Plotly Chart
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.7, 0.3])
+fig.add_trace(go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close']), row=1, col=1)
+fig.add_trace(go.Scatter(x=df['Date'].tail(15), y=df['Close'].tail(15)*1.01, mode='lines+markers', name='AI Path', line=dict(color='#a855f7', dash='dash')), row=1, col=1)
+st.plotly_chart(fig, use_container_width=True)</div>
+    </div>
+</div>
+</body>
+</html>

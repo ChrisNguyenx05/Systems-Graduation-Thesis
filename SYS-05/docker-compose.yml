@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # MinIO Object Storage (S3 API & Web Console)
+  # Credentials: admin123 / admin123
+  # ---------------------------------------------------------------------------
+  minio_s3:
+    image: minio/minio:latest
+    container_name: minio_s3
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin123}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-admin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./data/minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # MinIO Bucket Auto-Initialization Task
+  # ---------------------------------------------------------------------------
+  minio_init:
+    image: minio/mc:latest
+    container_name: minio_init
+    depends_on:
+      minio_s3:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio_s3:9000 ${MINIO_ACCESS_KEY:-admin123} ${MINIO_SECRET_KEY:-admin123};
+      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_BRONZE:-crypto-bronze};
+      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_SILVER:-crypto-silver};
+      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_GOLD:-crypto-gold};
+      /usr/bin/mc anonymous set download myminio/${BUCKET_BRONZE:-crypto-bronze};
+      /usr/bin/mc anonymous set download myminio/${BUCKET_SILVER:-crypto-silver};
+      /usr/bin/mc anonymous set download myminio/${BUCKET_GOLD:-crypto-gold};
+      echo 'MinIO Medallion Buckets Initialized Successfully!';
+      exit 0;
+      "
+
+  # ---------------------------------------------------------------------------
+  # ClickHouse Real-time OLAP Analytical Engine
+  # Credentials: admin123 / admin123
+  # ---------------------------------------------------------------------------
+  clickhouse_server:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse_server
+    restart: always
+    ports:
+      - "8123:8123"   # ClickHouse HTTP Interface / Web UI
+      - "9004:9000"   # ClickHouse Native TCP Interface (mapped to 9004 on host)
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-admin123}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-admin123}
+      CLICKHOUSE_DEFAULT_USER_PASSWORD: ${CLICKHOUSE_PASSWORD:-admin123}
+    volumes:
+      - ./data/clickhouse:/var/lib/clickhouse
+      - ./sql/init_clickhouse_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 15 Relational Metadata DB
+  # Credentials: admin123 / admin123
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: sys05_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      POSTGRES_DB: ${POSTGRES_DB:-enterprise_metadata}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin123}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

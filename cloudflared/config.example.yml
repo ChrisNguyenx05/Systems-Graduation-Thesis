@@ -1,0 +1,10 @@
+# Copy to cloudflared/config.yml on the PC that runs Docker.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: C:\\Users\\REPLACE_WITH_WINDOWS_USER\\.cloudflared\\REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  # Protect this admin interface with Cloudflare Access before sharing it.
+  - hostname: airflow-demo.example.com
+    service: http://localhost:8085
+  # Never expose PostgreSQL, ClickHouse, or MinIO's S3 API.
+  - service: http_status:404

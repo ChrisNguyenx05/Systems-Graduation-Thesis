@@ -1,0 +1,16 @@
+# Secrets and local deployment state
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Cloudflare Tunnel credentials
+cloudflared/*.json
+cloudflared/config.yml
+
+# Local runtime data and logs
+**/data/
+**/logs/
+__pycache__/
+*.py[cod]

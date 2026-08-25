@@ -1,0 +1,20 @@
+{
+  "alert_type": "FRAUD_TRANSACTION",
+  "level": "CRITICAL",
+  "source_system": "SYS-04",
+  "event": "HIGH_FRAUD_TRANSACTION_FLAGGED",
+  "deduplicate_key": "fraud_tx:TX_889214:fraud_score",
+  "message": "Phát hiện giao dịch nghi vấn gian lận giá trị lớn ($75,000 USD) với Fraud Score 0.94 từ mô hình LightGBM.",
+  "timestamp": "2026-08-23T11:48:15Z",
+  "receiver_roles": ["risk_manager", "compliance"],
+  "channels": ["telegram", "slack"],
+  "action_url": "http://localhost:5000/transactions/TX_889214",
+  "suggested_action": "Tạm khóa giao dịch trong 30 phút và liên hệ xác thực danh tính chủ tài khoản.",
+  "metadata": {
+    "transaction_id": "TX_889214",
+    "user_id": "USR_44901",
+    "amount_usd": 75000.0,
+    "fraud_score": 0.94,
+    "flagged_rules": ["IP_GEO_MISMATCH", "VELOCITY_SPIKE_10X", "UNUSUAL_DEVICE_FINGERPRINT"]
+  }
+}

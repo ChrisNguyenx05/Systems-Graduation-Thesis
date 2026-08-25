@@ -1,0 +1,20 @@
+{
+  "alert_type": "INFRASTRUCTURE_FAILURE",
+  "level": "CRITICAL",
+  "source_system": "SYS-03",
+  "event": "DOCKER_CONTAINER_DOWN",
+  "deduplicate_key": "infra_failure:kafka_broker_01:down",
+  "message": "Container 'kafka-broker-01' đã dừng đột ngột với exit code 137 (OOMKilled).",
+  "timestamp": "2026-08-23T11:47:00Z",
+  "receiver_roles": ["devops_sre"],
+  "channels": ["telegram", "slack"],
+  "action_url": "http://localhost:3000/d/docker-overview",
+  "suggested_action": "Tăng giới hạn bộ nhớ RAM trong docker-compose.yml và khởi động lại container.",
+  "metadata": {
+    "container_name": "kafka-broker-01",
+    "host_ip": "192.168.1.50",
+    "exit_code": 137,
+    "memory_usage_mb": 4096,
+    "memory_limit_mb": 4096
+  }
+}

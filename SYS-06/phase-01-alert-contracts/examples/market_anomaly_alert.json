@@ -1,0 +1,20 @@
+{
+  "alert_type": "MARKET_ANOMALY",
+  "level": "CRITICAL",
+  "source_system": "SYS-01",
+  "event": "PUMP_AND_DUMP_DETECTED",
+  "deduplicate_key": "market_anomaly:BTCUSDT:pump_dump_001",
+  "message": "Phát hiện dấu hiệu Pump & Dump trên cặp BTC/USDT. Khối lượng khớp lệnh tăng +340.5% trong 3 phút.",
+  "timestamp": "2026-08-23T11:45:00Z",
+  "receiver_roles": ["trader", "risk_manager"],
+  "channels": ["telegram", "slack"],
+  "action_url": "http://localhost:8501/analytics?symbol=BTCUSDT",
+  "suggested_action": "Tạm dừng auto-trading bot và rà soát lệnh thị trường.",
+  "metadata": {
+    "symbol": "BTCUSDT",
+    "volume_spike_pct": 340.5,
+    "price_change_pct": 12.8,
+    "model_score": 0.96,
+    "timeframe": "3m"
+  }
+}

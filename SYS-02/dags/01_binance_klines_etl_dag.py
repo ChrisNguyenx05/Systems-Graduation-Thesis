@@ -1,0 +1,130 @@
+"""Hourly real Binance -> MinIO Bronze/Silver -> ClickHouse Gold pipeline."""
+
+from datetime import datetime, timedelta, timezone
+import logging
+import os
+import sys
+
+import requests
+from airflow import DAG
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+from sys02_orchestration.operators.clickhouse_operator import ClickHouseTaskOperator
+from sys02_orchestration.operators.lakehouse_operator import LakehouseTaskOperator
+from sys02_orchestration.utils.data_quality import validate_klines_data
+
+SYMBOL = "BTCUSDT"
+LOGGER = logging.getLogger(__name__)
+
+
+def send_sys06_alert(payload: dict) -> None:
+    """Post an alert to SYS-06 without changing the Airflow task/DAG outcome."""
+    url = os.getenv("SYS06_ALERT_URL", "").strip()
+    token = os.getenv("SYS06_ALERT_API_TOKEN", "").strip()
+    if not url or not token:
+        LOGGER.warning("SYS-06 alert skipped: dispatcher configuration is missing")
+        return
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            headers={"X-Alert-Token": token},
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        LOGGER.warning("SYS-06 alert could not be delivered: %s", exc)
+
+
+def send_failure_alert(context) -> None:
+    """Notify Telegram when one Airflow task fails."""
+    task_instance = context["task_instance"]
+    send_sys06_alert(
+        {
+            "alert_type": "PIPELINE_FAILURE",
+            "level": "CRITICAL",
+            "source_system": "SYS-02",
+            "event": "AIRFLOW_TASK_FAILED",
+            "deduplicate_key": f"sys02:failure:{task_instance.dag_id}:{task_instance.task_id}:{task_instance.run_id}",
+            "message": f"Airflow task {task_instance.task_id} failed in DAG {task_instance.dag_id}.",
+            "channels": ["telegram"],
+            "action_url": f"http://localhost:8085/dags/{task_instance.dag_id}/grid",
+        }
+    )
+
+
+def send_dag_success_alert(context) -> None:
+    """Send exactly one Telegram message after a complete successful DAG run."""
+    dag_run = context["dag_run"]
+    send_sys06_alert(
+        {
+            "alert_type": "SYSTEM_HEALTH",
+            "level": "INFO",
+            "source_system": "SYS-02",
+            "event": "AIRFLOW_DAG_COMPLETED",
+            "deduplicate_key": f"sys02:success:{dag_run.dag_id}:{dag_run.run_id}",
+            "message": f"Airflow DAG {dag_run.dag_id} completed successfully.",
+            "channels": ["telegram"],
+            "action_url": f"http://localhost:8085/dags/{dag_run.dag_id}/grid",
+        }
+    )
+
+
+def extract_bronze_task() -> dict:
+    response = requests.get("https://api.binance.com/api/v3/klines", params={"symbol": SYMBOL, "interval": "1m", "limit": 20}, timeout=20)
+    response.raise_for_status()
+    records = [
+        {"symbol": SYMBOL, "timestamp": int(row[0] // 1000), "open": float(row[1]), "high": float(row[2]), "low": float(row[3]), "close": float(row[4]), "volume": float(row[5])}
+        for row in response.json()
+    ]
+    date_str = datetime.now(timezone.utc).date().isoformat()
+    return LakehouseTaskOperator().write_bronze_klines(records, SYMBOL, date_str)
+
+
+def transform_silver_task(ti) -> dict:
+    bronze = ti.xcom_pull(task_ids="extract_bronze_data")
+    return LakehouseTaskOperator().process_bronze_to_silver(bronze["records"], SYMBOL, datetime.now(timezone.utc).date().isoformat())
+
+
+def data_quality_gate_task(ti) -> dict:
+    silver = ti.xcom_pull(task_ids="transform_silver_parquet")
+    result = validate_klines_data(silver["records"])
+    if not result["passed"]:
+        raise ValueError(f"Data quality gate failed: {result}")
+    return result
+
+
+def load_gold_task(ti) -> dict:
+    silver = ti.xcom_pull(task_ids="transform_silver_parquet")
+    operator = ClickHouseTaskOperator()
+    inserted = operator.insert_gold_klines(silver["records"])
+    freshness = operator.verify_table_freshness("crypto_klines_gold")
+    if not freshness["is_fresh"]:
+        raise RuntimeError("ClickHouse Gold freshness verification failed")
+    return {"inserted_rows": inserted, **freshness}
+
+
+default_args = {
+    "owner": "data_engineering",
+    "retries": 2,
+    "retry_delay": timedelta(minutes=3),
+    "start_date": datetime(2026, 8, 1),
+    "on_failure_callback": send_failure_alert,
+}
+with DAG(
+    "01_binance_klines_etl_dag",
+    default_args=default_args,
+    schedule="@hourly",
+    catchup=False,
+    on_success_callback=send_dag_success_alert,
+    tags=["etl", "binance", "minio", "clickhouse", "sys06-alerts"],
+) as dag:
+    start = EmptyOperator(task_id="start_pipeline")
+    extract = PythonOperator(task_id="extract_bronze_data", python_callable=extract_bronze_task)
+    transform = PythonOperator(task_id="transform_silver_parquet", python_callable=transform_silver_task)
+    quality = PythonOperator(task_id="validate_data_quality_gate", python_callable=data_quality_gate_task)
+    load = PythonOperator(task_id="load_gold_clickhouse", python_callable=load_gold_task)
+    end = EmptyOperator(task_id="end_pipeline")
+    start >> extract >> transform >> quality >> load >> end

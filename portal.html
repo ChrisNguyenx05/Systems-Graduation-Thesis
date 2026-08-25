@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Data and AI Ecosystem | Company Pipeline Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #070B12;
+      background-image:
+        radial-gradient(ellipse at top left, rgba(37, 99, 235, 0.12) 0%, transparent 48%),
+        radial-gradient(ellipse at top right, rgba(16, 185, 129, 0.08) 0%, transparent 44%),
+        radial-gradient(circle at bottom center, rgba(139, 92, 246, 0.05) 0%, transparent 58%);
+      background-attachment: fixed;
+    }
+    .glass-panel { background: rgba(13, 19, 31, 0.78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+    .system-card { background: rgba(13, 19, 31, 0.86); border: 1px solid rgba(255,255,255,0.07); transition: all .2s cubic-bezier(.16,1,.3,1); }
+    .system-card:hover { transform: translateY(-2px); border-color: rgba(59,130,246,.45); box-shadow: 0 18px 38px -16px rgba(0,0,0,.7), 0 0 20px rgba(59,130,246,.12); }
+    .pulse-online { animation: pulse-ring 2s cubic-bezier(.215,.61,.355,1) infinite; }
+    @keyframes pulse-ring { 0% { transform: scale(.95); opacity: .8; } 50% { transform: scale(1.15); opacity: .42; } 100% { transform: scale(.95); opacity: .8; } }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #070B12; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-6 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white text-base">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-sm font-bold text-white tracking-wide">Enterprise Data and AI Ecosystem</h1>
+            <span class="px-2 py-0.5 text-[10px] font-bold font-mono bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded">v2.0 MASTER</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Financial Analytics and Fraud Detection Command Center</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center space-x-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-online"></span>
+          <span id="live-clock">--:--:--</span>
+        </div>
+        <button onclick="checkAllServices()" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition active:scale-95">
+          <i id="refresh-icon" class="fa-solid fa-arrows-rotate text-blue-400"></i><span>Scan Status</span>
+        </button>
+        <a href="Plan/systems_docs/00_System_Ecosystem_Master_Index.html" target="_blank" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-md shadow-blue-600/20 transition active:scale-95">
+          <i class="fa-solid fa-book"></i><span>Project Docs</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6 flex-1 w-full space-y-6">
+    <section class="glass-panel rounded-xl p-5 border border-slate-800/80">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center space-x-2 text-xs font-mono text-blue-400 uppercase tracking-wider mb-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span><span>Unified Operations Gateway</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Company Pipeline Control Portal</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
+            A single command center for the thesis enterprise platform: Airflow orchestration, Binance data collection, Data Quality gates, MinIO lakehouse storage, ClickHouse Gold analytics, model serving, monitoring, and alerting.
+          </p>
+        </div>
+        <div class="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-lg border border-slate-800/90 text-center min-w-[320px]">
+          <div class="border-r border-slate-800/80 pr-2"><div class="text-[10px] uppercase font-mono text-slate-500">Scope</div><div class="text-sm font-bold text-white font-mono">6 Systems</div></div>
+          <div class="border-r border-slate-800/80 px-2"><div class="text-[10px] uppercase font-mono text-slate-500">User</div><div class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded mt-0.5">admin123</div></div>
+          <div class="pl-2"><div class="text-[10px] uppercase font-mono text-slate-500">Password</div><div class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded mt-0.5">admin123</div></div>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 mt-5 pt-4 border-t border-slate-800/60 overflow-x-auto text-xs">
+        <button onclick="filterCards('all')" class="tab-btn active px-3 py-1.5 rounded-md font-medium text-white bg-blue-600 transition" data-filter="all">All Systems (6)</button>
+        <button onclick="filterCards('data')" class="tab-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition" data-filter="data">Data and Lakehouse</button>
+        <button onclick="filterCards('ai')" class="tab-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition" data-filter="ai">AI and Analytics</button>
+        <button onclick="filterCards('ops')" class="tab-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition" data-filter="ops">Operations and Alerts</button>
+      </div>
+    </section>
+
+    <section id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></section>
+
+    <section class="glass-panel rounded-xl border border-slate-800/80 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-800/80 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-md bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-sm"><i class="fa-solid fa-table-list"></i></div>
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Pipeline Run Control Board</h3>
+            <p class="text-xs text-slate-400">Control scheduled Binance collection, quality validation, transformation, and Gold loading from one board.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <input id="pipeline-search" oninput="renderPipelineRows()" type="search" placeholder="Search source / product / batch" class="w-56 bg-slate-950/80 border border-slate-800 rounded-md px-3 py-2 text-slate-200 placeholder:text-slate-500 outline-none focus:border-blue-500" />
+          <input id="pipeline-from" onchange="renderPipelineRows()" type="date" class="bg-slate-950/80 border border-slate-800 rounded-md px-3 py-2 text-slate-300 outline-none focus:border-blue-500" />
+          <input id="pipeline-to" onchange="renderPipelineRows()" type="date" class="bg-slate-950/80 border border-slate-800 rounded-md px-3 py-2 text-slate-300 outline-none focus:border-blue-500" />
+          <select id="pipeline-status-filter" onchange="renderPipelineRows()" class="bg-slate-950/80 border border-slate-800 rounded-md px-3 py-2 text-slate-300 outline-none focus:border-blue-500">
+            <option value="all">Pipeline Status</option><option value="Done">Done</option><option value="Failed">Failed</option><option value="Running">Running</option><option value="Queued">Queued</option>
+          </select>
+        </div>
+      </div>
+      <div class="px-5 py-3 border-b border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="bg-slate-950/70 border border-slate-800 rounded-md px-3 py-2"><div class="text-[10px] text-slate-500 uppercase font-mono">Total Runs</div><div id="metric-total-runs" class="text-base font-bold text-white font-mono">0</div></div>
+          <div class="bg-slate-950/70 border border-slate-800 rounded-md px-3 py-2"><div class="text-[10px] text-slate-500 uppercase font-mono">Quality Passed</div><div id="metric-quality-passed" class="text-base font-bold text-emerald-400 font-mono">0</div></div>
+          <div class="bg-slate-950/70 border border-slate-800 rounded-md px-3 py-2"><div class="text-[10px] text-slate-500 uppercase font-mono">Failed</div><div id="metric-failed-runs" class="text-base font-bold text-rose-400 font-mono">0</div></div>
+          <div class="bg-slate-950/70 border border-slate-800 rounded-md px-3 py-2"><div class="text-[10px] text-slate-500 uppercase font-mono">Gold Rows</div><div id="metric-gold-rows" class="text-base font-bold text-blue-300 font-mono">0</div></div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide">
+          <button onclick="exportPipelineRows()" class="px-3 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-blue-300 border border-slate-800 transition flex items-center gap-2"><i class="fa-solid fa-download"></i><span>Export</span></button>
+          <button onclick="togglePipelineColumns()" class="px-3 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 transition flex items-center gap-2"><i class="fa-solid fa-bars"></i><span>Columns</span></button>
+          <button onclick="resetPipelineFilters()" class="px-3 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition flex items-center gap-2"><i class="fa-solid fa-filter-circle-xmark"></i><span>Reset Filters</span></button>
+          <a href="http://localhost:8085" target="_blank" class="px-3 py-2 rounded-md bg-teal-600 hover:bg-teal-500 text-white transition flex items-center gap-2"><i class="fa-solid fa-diagram-project"></i><span>Open Airflow</span></a>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-[1260px] w-full text-xs text-left">
+          <thead class="bg-slate-950/80 text-slate-400 border-b border-slate-800/80 uppercase text-[10px] tracking-wide">
+            <tr><th class="px-3 py-3 w-8"></th><th class="px-3 py-3 w-8"><input type="checkbox" class="accent-blue-500"></th><th class="px-3 py-3">Source</th><th class="px-3 py-3">Company</th><th class="px-3 py-3">Product</th><th class="px-3 py-3">Input Day</th><th class="px-3 py-3">Stage</th><th class="px-3 py-3">Collect Status</th><th class="px-3 py-3">Quality Status</th><th class="px-3 py-3">Collect Start</th><th class="px-3 py-3">Transform Status</th><th class="px-3 py-3">Pipeline Status</th><th class="px-3 py-3">Actions</th></tr>
+          </thead>
+          <tbody id="pipeline-runs-body" class="divide-y divide-slate-800/70 bg-slate-950/20"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div class="lg:col-span-2 glass-panel rounded-xl p-5 border border-slate-800/80">
+        <div class="flex items-center justify-between mb-4"><div class="flex items-center space-x-2.5"><div class="w-7 h-7 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs"><i class="fa-solid fa-terminal"></i></div><h3 class="text-xs font-bold text-white uppercase tracking-wider">One-Command Operations</h3></div><span class="text-[10px] font-mono text-slate-500">Project Root</span></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="script-grid"></div>
+      </div>
+      <div class="glass-panel rounded-xl p-5 border border-slate-800/80 flex flex-col justify-between">
+        <div><div class="flex items-center space-x-2.5 mb-3"><div class="w-7 h-7 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs"><i class="fa-solid fa-folder-tree"></i></div><h3 class="text-xs font-bold text-white uppercase tracking-wider">Architecture and Thesis Docs</h3></div><p class="text-xs text-slate-400 leading-relaxed mb-3">Open the system guide, linked pipeline plan, and cloud deployment plan for the final thesis period.</p></div>
+        <div class="space-y-2 font-mono text-xs">
+          <a href="HUONG_DAN_KIEM_TRA.md" target="_blank" class="block p-2 bg-slate-900/90 hover:bg-slate-800 rounded border border-slate-800 text-emerald-400 hover:text-emerald-300 transition flex items-center justify-between"><span>Demo and Verification Guide</span><i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+          <a href="Plan/LINKED_SYSTEMS_DATA_QUALITY_PIPELINE_PLAN.md" target="_blank" class="block p-2 bg-slate-900/90 hover:bg-slate-800 rounded border border-slate-800 text-cyan-400 hover:text-cyan-300 transition flex items-center justify-between"><span>Linked Pipeline and Quality Plan</span><i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+          <a href="Plan/FREE_TIER_CLOUD_DEPLOYMENT_PLAN.md" target="_blank" class="block p-2 bg-slate-900/90 hover:bg-slate-800 rounded border border-slate-800 text-blue-400 hover:text-blue-300 transition flex items-center justify-between"><span>Free-Tier Cloud Plan</span><i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2"><div>Enterprise Data and AI Ecosystem - Graduation Thesis 2026</div><div class="font-mono text-[11px] flex items-center space-x-2"><span>Architecture: Medallion Lakehouse + MLOps</span><span>|</span><span>Status: Thesis Demo Ready</span></div></div>
+  </footer>
+
+  <script>
+    const systems = [
+      { id: 'sys01', category: 'ai', badge: 'SYS-01 - ANALYTICS', color: 'purple', icon: 'fa-chart-line', title: 'Predictive Analytics Web', subtitle: 'Streamlit Interactive Dashboard', description: 'Visualizes real-time Klines, market signals, anomaly indicators, and model outputs for business users.', port: '8501', auth: 'No login', href: 'http://localhost:8501', cta: 'Open Dashboard', docs: 'Plan/systems_docs/01_Business_Predictive_Analytics_Dashboard.html' },
+      { id: 'sys02', category: 'data', badge: 'SYS-02 - ORCHESTRATION', color: 'teal', icon: 'fa-diagram-project', title: 'Data Pipeline Orchestration', subtitle: 'Apache Airflow 2.8.1', description: 'Schedules Binance ingestion, Data Quality gates, Bronze to Silver transformations, Gold loading, and ML retraining triggers.', port: '8085', auth: 'admin123 / admin123', href: 'http://localhost:8085', cta: 'Open Airflow', docs: 'Plan/systems_docs/02_Data_Pipeline_Orchestration_System.html' },
+      { id: 'sys05', category: 'data', badge: 'SYS-05 - LAKEHOUSE', color: 'emerald', icon: 'fa-database', title: 'Lakehouse and Database Portal', subtitle: 'MinIO, ClickHouse, PostgreSQL', description: 'Controls Bronze, Silver, and Gold lakehouse storage, analytical tables, quality result tables, and batch status history.', port: '9001 / 8123', auth: 'admin123 / admin123', href: 'http://localhost:9001', cta: 'Open MinIO', docs: 'Plan/systems_docs/05_Lakehouse_Database_Management_Portal.html' },
+      { id: 'sys04', category: 'ai', badge: 'SYS-04 - MLOPS', color: 'blue', icon: 'fa-brain', title: 'MLOps and Model Governance', subtitle: 'FastAPI and MLflow', description: 'Serves prediction APIs, tracks experiments, manages model versions, and blocks retraining when Gold data is stale or invalid.', port: '8000 / 5000', auth: 'No login', href: 'http://localhost:8000/docs', cta: 'Open API Docs', docs: 'Plan/systems_docs/04_MLOps_Model_Governance_Center.html' },
+      { id: 'sys03', category: 'ops', badge: 'SYS-03 - MONITORING', color: 'orange', icon: 'fa-server', title: 'Operations and Telemetry Center', subtitle: 'Prometheus and Grafana', description: 'Monitors container health, pipeline failures, Data Quality failures, ClickHouse freshness, resource usage, and SLA status.', port: '3000 / 9090', auth: 'admin / admin123', href: 'http://localhost:3000', cta: 'Open Grafana', docs: 'Plan/systems_docs/03_Infrastructure_Operations_Center.html' },
+      { id: 'sys06', category: 'ops', badge: 'SYS-06 - ALERTING', color: 'sky', icon: 'fa-bell', title: 'Notification and Alert Dispatcher', subtitle: 'Telegram Bot and incident events', description: 'Sends alerts for API failures, Data Quality failures, stale Gold data, SLA misses, and model retraining failures.', port: 'Bot API', auth: 'Token based', href: 'https://t.me/', cta: 'Open Telegram', docs: 'Plan/systems_docs/06_Operational_Alerting_Notification_System.html', staticStatus: 'Webhook Ready' }
+    ];
+
+    const pipelineRuns = [
+      { source: 'PH.BINANCE.BTCUSDT', company: 'fintech_group_ph', product: 'BINANCE_KLINES_1M', inputDay: '2026-08-22', stage: 'Collect', collectStatus: 'Done', qualityStatus: 'Passed', collectStart: '2026-08-22 09:00:02', transformStatus: 'All done', transformCount: 1440, pipelineStatus: 'Done', goldRows: 1440, batchId: 'binance_klines_BTCUSDT_20260822T090000Z' },
+      { source: 'PH.BINANCE.ETHUSDT', company: 'fintech_group_ph', product: 'BINANCE_KLINES_1M', inputDay: '2026-08-22', stage: 'Quality Gate', collectStatus: 'Done', qualityStatus: 'Failed', collectStart: '2026-08-22 09:02:18', transformStatus: 'Blocked', transformCount: 0, pipelineStatus: 'Failed', goldRows: 0, batchId: 'binance_klines_ETHUSDT_20260822T090000Z' },
+      { source: 'PH.BINANCE.BNBUSDT', company: 'fintech_group_ph', product: 'BINANCE_KLINES_1M', inputDay: '2026-08-22', stage: 'Transform', collectStatus: 'Done', qualityStatus: 'Passed', collectStart: '2026-08-22 09:05:41', transformStatus: 'Running', transformCount: 860, pipelineStatus: 'Running', goldRows: 0, batchId: 'binance_klines_BNBUSDT_20260822T090000Z' },
+      { source: 'PH.BINANCE.BTCUSDT', company: 'fintech_group_ph', product: 'BINANCE_AGG_TRADES', inputDay: '2026-08-22', stage: 'Orchestrator', collectStatus: 'API queued', qualityStatus: 'Pending', collectStart: '-', transformStatus: 'Pending', transformCount: 0, pipelineStatus: 'Queued', goldRows: 0, batchId: 'binance_trades_BTCUSDT_20260822T091000Z' },
+      { source: 'PH.BINANCE.BTCUSDT', company: 'fintech_group_ph', product: 'BINANCE_DEPTH_SNAPSHOT', inputDay: '2026-08-21', stage: 'Collect', collectStatus: 'Done', qualityStatus: 'Passed', collectStart: '2026-08-21 23:50:06', transformStatus: 'All done', transformCount: 288, pipelineStatus: 'Done', goldRows: 288, batchId: 'binance_depth_BTCUSDT_20260821T235000Z' },
+      { source: 'PH.BINANCE.FUTURES', company: 'fintech_group_ph', product: 'BINANCE_LIQUIDATIONS', inputDay: '2026-08-21', stage: 'Collect', collectStatus: 'Done', qualityStatus: 'Passed', collectStart: '2026-08-21 23:45:00', transformStatus: 'All done', transformCount: 37, pipelineStatus: 'Done', goldRows: 37, batchId: 'binance_liquidations_20260821T234500Z' }
+    ];
+
+    const serviceUrls = { sys01: 'http://localhost:8501', sys02: 'http://localhost:8085', sys03: 'http://localhost:3000', sys04: 'http://localhost:8000', sys05: 'http://localhost:9001' };
+    const statusStyles = { Done: 'bg-emerald-500/90 text-white', Passed: 'bg-emerald-500/90 text-white', 'All done': 'bg-emerald-500/90 text-white', Failed: 'bg-rose-500/95 text-white', Blocked: 'bg-rose-500/95 text-white', Running: 'bg-blue-500/90 text-white', Queued: 'bg-amber-500/90 text-slate-950', 'API queued': 'bg-slate-200 text-slate-800 border border-slate-300', Pending: 'bg-slate-500/80 text-white' };
+    let compactPipelineColumns = false;
+
+    function updateClock() { const el = document.getElementById('live-clock'); if (el) el.innerText = new Date().toLocaleTimeString('en-US', { hour12: false }); }
+    setInterval(updateClock, 1000);
+
+    function renderSystems() {
+      const grid = document.getElementById('systems-grid');
+      grid.innerHTML = systems.map(system => {
+        const color = system.color;
+        const status = system.staticStatus || 'Not running';
+        return `<article class="system-card rounded-xl p-5 flex flex-col justify-between" data-category="${system.category}">
+          <div><div class="flex items-center justify-between mb-3"><span class="px-2.5 py-0.5 text-[11px] font-mono font-bold rounded bg-${color}-500/10 text-${color}-400 border border-${color}-500/30">${system.badge}</span><span id="status-${system.id}" class="flex items-center space-x-1.5 text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>${status}</span></span></div>
+          <div class="flex items-center space-x-3 mb-2.5"><div class="w-9 h-9 rounded-lg bg-${color}-600/20 text-${color}-400 flex items-center justify-center text-base"><i class="fa-solid ${system.icon}"></i></div><div><h3 class="text-sm font-bold text-white tracking-wide">${system.title}</h3><p class="text-[11px] text-slate-400">${system.subtitle}</p></div></div>
+          <p class="text-xs text-slate-400 leading-relaxed mb-4">${system.description}</p></div>
+          <div class="pt-3.5 border-t border-slate-800/80 space-y-2.5"><div class="flex items-center justify-between text-xs font-mono text-slate-400"><span>Port: <b class="text-slate-200">${system.port}</b></span><span>Auth: <b class="text-${color}-300">${system.auth}</b></span></div><div class="flex space-x-2"><a href="${system.href}" target="_blank" class="flex-1 text-center py-2 px-3 bg-${color}-600 hover:bg-${color}-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1.5 shadow-md active:scale-95"><span>${system.cta}</span><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a><a href="${system.docs}" target="_blank" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition" title="Open documentation"><i class="fa-solid fa-file-lines"></i></a></div></div>
+        </article>`;
+      }).join('');
+    }
+
+    function filterCards(category) {
+      document.querySelectorAll('.tab-btn').forEach(tab => { tab.className = tab.getAttribute('data-filter') === category ? 'tab-btn active px-3 py-1.5 rounded-md font-medium text-white bg-blue-600 transition' : 'tab-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition'; });
+      document.querySelectorAll('.system-card').forEach(card => { card.style.display = category === 'all' || card.getAttribute('data-category') === category ? 'flex' : 'none'; });
+    }
+
+    function statusPill(value, count) { const style = statusStyles[value] || 'bg-slate-600 text-white'; const countText = Number.isFinite(count) && count > 0 ? `<span class="ml-2 text-slate-400 font-mono">(${count})</span>` : ''; return `<span class="inline-flex min-w-[94px] justify-center px-3 py-1 rounded-full text-[11px] font-bold ${style}">${value}</span>${countText}`; }
+    function filteredPipelineRows() { const query = (document.getElementById('pipeline-search')?.value || '').toLowerCase().trim(); const from = document.getElementById('pipeline-from')?.value || ''; const to = document.getElementById('pipeline-to')?.value || ''; const status = document.getElementById('pipeline-status-filter')?.value || 'all'; return pipelineRuns.filter(row => { const haystack = `${row.source} ${row.company} ${row.product} ${row.batchId}`.toLowerCase(); return (!query || haystack.includes(query)) && (!from || row.inputDay >= from) && (!to || row.inputDay <= to) && (status === 'all' || row.pipelineStatus === status); }); }
+
+    function renderPipelineRows() {
+      const tbody = document.getElementById('pipeline-runs-body'); if (!tbody) return;
+      const rows = filteredPipelineRows();
+      tbody.innerHTML = rows.map(row => `<tr class="hover:bg-slate-900/70 transition"><td class="px-3 py-3 text-slate-500"><i class="fa-solid fa-chevron-right text-[10px]"></i></td><td class="px-3 py-3"><input type="checkbox" class="accent-blue-500"></td><td class="px-3 py-3 font-mono text-slate-200 whitespace-nowrap">${row.source}</td><td class="px-3 py-3 text-slate-300 whitespace-nowrap ${compactPipelineColumns ? 'hidden' : ''}">${row.company}</td><td class="px-3 py-3 font-mono text-blue-200 whitespace-nowrap">${row.product}</td><td class="px-3 py-3 text-slate-300 whitespace-nowrap">${row.inputDay}</td><td class="px-3 py-3 text-slate-300 whitespace-nowrap">${row.stage}</td><td class="px-3 py-3 whitespace-nowrap">${statusPill(row.collectStatus)}</td><td class="px-3 py-3 whitespace-nowrap">${statusPill(row.qualityStatus)}</td><td class="px-3 py-3 font-mono text-slate-300 whitespace-nowrap ${compactPipelineColumns ? 'hidden' : ''}">${row.collectStart}</td><td class="px-3 py-3 whitespace-nowrap">${statusPill(row.transformStatus, row.transformCount)}</td><td class="px-3 py-3 whitespace-nowrap">${statusPill(row.pipelineStatus)}</td><td class="px-3 py-3 whitespace-nowrap"><div class="flex items-center gap-2"><button onclick="copyCode('${row.batchId}', this)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Copy batch ID"><i class="fa-regular fa-copy"></i></button><a href="http://localhost:8085" target="_blank" class="px-2 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white" title="Open Airflow"><i class="fa-solid fa-play"></i></a></div></td></tr>`).join('');
+      document.getElementById('metric-total-runs').innerText = rows.length.toLocaleString('en-US');
+      document.getElementById('metric-quality-passed').innerText = rows.filter(row => row.qualityStatus === 'Passed').length.toLocaleString('en-US');
+      document.getElementById('metric-failed-runs').innerText = rows.filter(row => row.pipelineStatus === 'Failed').length.toLocaleString('en-US');
+      document.getElementById('metric-gold-rows').innerText = rows.reduce((sum, row) => sum + row.goldRows, 0).toLocaleString('en-US');
+    }
+
+    function renderScripts() { const scripts = [{ label: 'Start Ecosystem', icon: 'fa-play', color: 'emerald', command: '.\\start_ecosystem.ps1' }, { label: 'Stop and Free RAM', icon: 'fa-stop', color: 'rose', command: '.\\stop_ecosystem.ps1' }, { label: 'Open HTTPS Tunnel', icon: 'fa-globe', color: 'blue', command: '.\\start_tunnel.ps1' }]; document.getElementById('script-grid').innerHTML = scripts.map(item => `<div class="bg-slate-950/90 p-3 rounded-lg border border-slate-800/90 flex flex-col justify-between"><div class="text-[11px] font-semibold text-${item.color}-400 mb-1.5 flex items-center space-x-1.5"><i class="fa-solid ${item.icon} text-[9px]"></i><span>${item.label}</span></div><div class="font-mono text-xs text-slate-300 bg-slate-900 px-2 py-1 rounded border border-slate-800 flex items-center justify-between"><span>${item.command}</span><button onclick="copyCode('${item.command.replace(/\\/g, '\\\\')}', this)" class="text-slate-500 hover:text-white text-xs cursor-pointer ml-1"><i class="fa-regular fa-copy"></i></button></div></div>`).join(''); }
+
+    function resetPipelineFilters() { document.getElementById('pipeline-search').value = ''; document.getElementById('pipeline-from').value = ''; document.getElementById('pipeline-to').value = ''; document.getElementById('pipeline-status-filter').value = 'all'; renderPipelineRows(); }
+    function togglePipelineColumns() { compactPipelineColumns = !compactPipelineColumns; renderPipelineRows(); }
+    function exportPipelineRows() { const rows = filteredPipelineRows(); const header = ['source','company','product','inputDay','stage','collectStatus','qualityStatus','collectStart','transformStatus','pipelineStatus','goldRows','batchId']; const csv = [header.join(',')].concat(rows.map(row => header.map(key => `"${String(row[key]).replace(/"/g, '""')}"`).join(','))).join('\n'); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'pipeline-runs.csv'; link.click(); URL.revokeObjectURL(link.href); }
+    function copyCode(text, btn) { navigator.clipboard.writeText(text); const original = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>'; setTimeout(() => { btn.innerHTML = original; }, 1600); }
+
+    async function probeService(url, statusId) { const el = document.getElementById(statusId); if (!el) return; try { const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1000); await fetch(url, { mode: 'no-cors', signal: controller.signal }); clearTimeout(timeoutId); el.className = 'flex items-center space-x-1.5 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30'; el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-online"></span><span>Online</span>'; } catch (err) { el.className = 'flex items-center space-x-1.5 text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700'; el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>Not running</span>'; } }
+    function checkAllServices() { const refreshIcon = document.getElementById('refresh-icon'); if (refreshIcon) refreshIcon.classList.add('fa-spin'); Object.entries(serviceUrls).forEach(([id, url]) => probeService(url, `status-${id}`)); setTimeout(() => { if (refreshIcon) refreshIcon.classList.remove('fa-spin'); }, 1200); }
+
+    window.addEventListener('DOMContentLoaded', () => { updateClock(); renderSystems(); renderPipelineRows(); renderScripts(); checkAllServices(); });
+  </script>
+</body>
+</html>
