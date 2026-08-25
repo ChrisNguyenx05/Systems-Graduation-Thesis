@@ -68,7 +68,7 @@ Write-Host "[4/4] Hoàn tất! Đang mở Cổng điều hướng Unified Ecosys
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "  🎉 HỆ THỐNG ĐÃ SẴN SÀNG ĐỂ KIỂM TRA & DEMO                         " -ForegroundColor Green
-Write-Host "  👉 Portal:             file://$((Get-Location).Path.Replace('\','/'))/portal.html" -ForegroundColor White
+Write-Host "  👉 Portal:             file://$((Get-Location).Path.Replace('\','/'))/index.html" -ForegroundColor White
 Write-Host "  👉 SYS-02 Airflow UI:   http://localhost:8085 (admin123 / admin123)" -ForegroundColor White
 Write-Host "  👉 SYS-05 MinIO UI:     http://localhost:9001 (admin123 / admin123)" -ForegroundColor White
 Write-Host "  👉 SYS-05 ClickHouse:   http://localhost:8123/play" -ForegroundColor White
@@ -76,4 +76,4 @@ Write-Host "====================================================================
 Write-Host ""
 
 # Mở portal trên trình duyệt mặc định
-Start-Process "portal.html"
+Start-Process "index.html"

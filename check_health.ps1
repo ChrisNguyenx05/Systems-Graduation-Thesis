@@ -61,5 +61,5 @@ $results | Format-Table -AutoSize
 
 Write-Host ""
 Write-Host "-> De khoi dong cac dich vu con tat, chay: .\start_ecosystem.ps1" -ForegroundColor Yellow
-Write-Host "-> De mo giao dien tong quan, mo file:     .\portal.html" -ForegroundColor Cyan
+Write-Host "-> De mo giao dien tong quan, mo file:     .\index.html" -ForegroundColor Cyan
 Write-Host ""
