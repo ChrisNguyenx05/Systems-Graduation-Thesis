@@ -111,4 +111,4 @@ jobs:
         run: |
           (cd SYS-02 && docker compose config -q)
           (cd SYS-05 && docker compose config -q)
-          (cd SYS-06 && docker compose --env-file .env.example -f docker-compose.v2.yml config -q)
+          (cd SYS-06 && cp .env.example .env && docker compose -f docker-compose.v2.yml config -q && rm .env)
