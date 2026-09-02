@@ -2,6 +2,7 @@
 
 import io
 import json
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from minio import Minio
@@ -45,3 +46,34 @@ class LakehouseTaskOperator:
         cleaned = [{field: row[field] for field in fields} for row in records]
         path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "records": cleaned})
         return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned}
+
+    def write_market_metrics(self, bucket, dataset, run_key, records):
+        return self._write(bucket, f"market_metrics/{dataset}/run={run_key}/data.json", {"dataset": dataset, "records": records})
+    def read_market_metrics(self, path):
+        if not path.startswith("s3://"): raise ValueError(f"Invalid MinIO path: {path}")
+        bucket, obj = path[5:].split("/", 1); response = self._client().get_object(bucket, obj)
+        try: return json.loads(response.read().decode("utf-8"))["records"]
+        finally: response.close(); response.release_conn()
+
+    def clean_expired_bronze_files(self, retention_days: int = 30) -> Dict[str, Any]:
+        """Delete only Bronze objects older than the configured retention period."""
+        if retention_days <= 0:
+            raise ValueError("retention_days must be greater than zero")
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        files_purged = reclaimed_bytes = 0
+        try:
+            client = self._client()
+            if not client.bucket_exists(self.bronze_bucket):
+                return {"bucket": self.bronze_bucket, "retention_days": retention_days, "files_purged": 0, "reclaimed_bytes": 0, "status": "SUCCESS"}
+            for obj in client.list_objects(self.bronze_bucket, recursive=True):
+                modified = obj.last_modified
+                if modified.tzinfo is None:
+                    modified = modified.replace(tzinfo=timezone.utc)
+                if modified >= cutoff:
+                    continue
+                client.remove_object(self.bronze_bucket, obj.object_name)
+                files_purged += 1
+                reclaimed_bytes += obj.size or 0
+        except Exception as exc:
+            raise RuntimeError(f"MinIO Bronze cleanup failed: {exc}") from exc
+        return {"bucket": self.bronze_bucket, "retention_days": retention_days, "files_purged": files_purged, "reclaimed_bytes": reclaimed_bytes, "status": "SUCCESS"}

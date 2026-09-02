@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   # ---------------------------------------------------------------------------
   # MinIO Object Storage (S3 API & Web Console)
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   minio_s3:
-    image: minio/minio:latest
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: minio_s3
     restart: always
     ports:
@@ -28,7 +26,7 @@ services:
   # MinIO Bucket Auto-Initialization Task
   # ---------------------------------------------------------------------------
   minio_init:
-    image: minio/mc:latest
+    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     container_name: minio_init
     depends_on:
       minio_s3:
@@ -51,7 +49,7 @@ services:
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   clickhouse_server:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server@sha256:f90a77560f72b10802106ee49e9870e41668cbc496e280c3911f6e3b216657f3
     container_name: clickhouse_server
     restart: always
     ports:
@@ -61,6 +59,7 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:?Set CLICKHOUSE_USER in .env}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}
       CLICKHOUSE_DEFAULT_USER_PASSWORD: ${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
     volumes:
       - ./data/clickhouse:/var/lib/clickhouse
       - ./sql/init_clickhouse_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql

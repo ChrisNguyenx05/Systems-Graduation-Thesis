@@ -14,3 +14,7 @@ cloudflared/config.yml
 **/logs/
 __pycache__/
 *.py[cod]
+
+# Local migration exports (not source code)
+/migration-backup/
+**/.pytest_cache/

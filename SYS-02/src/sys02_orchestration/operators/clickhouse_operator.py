@@ -1,6 +1,7 @@
 """Real ClickHouse Gold-layer persistence operations."""
 
 from datetime import datetime, timezone
+import json
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -66,3 +67,32 @@ class ClickHouseTaskOperator:
     def verify_table_freshness(self, table_name: str, max_allowed_delay_seconds: int = 3600) -> Dict[str, Any]:
         row_count = int(self.execute_sql(f"SELECT count() FROM {table_name} WHERE updated_at >= now() - INTERVAL {max_allowed_delay_seconds} SECOND"))
         return {"table_name": table_name, "row_count": row_count, "is_fresh": row_count > 0, "max_delay_seconds": max_allowed_delay_seconds}
+
+    @staticmethod
+    def _timestamp_text(value):
+        return datetime.fromtimestamp(int(value)/1000, timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    def _insert_json_rows(self, table, rows):
+        if not rows: return 0
+        normalized=[]
+        for row in rows:
+            item=dict(row)
+            for key in ("open_time","close_time","event_time","trade_time","observed_at","order_time","collected_at"):
+                if key in item: item[key]=self._timestamp_text(item[key])
+            for key in ("bids","asks"):
+                if key in item: item[key]=json.dumps(item[key],separators=(",",":"))
+            normalized.append(item)
+        try:
+            r=requests.post(self.url,params={"query":f"INSERT INTO {table} FORMAT JSONEachRow"},auth=(self.user,self.password),data="\n".join(json.dumps(x,separators=(",",":")) for x in normalized).encode(),timeout=45); r.raise_for_status()
+        except Exception as exc: raise RuntimeError(f"ClickHouse insert failed for {table}: {exc}") from exc
+        return len(rows)
+    def ensure_market_metric_tables(self):
+        self.ensure_tables_exist()
+        self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS taker_buy_base_asset_volume Float64 DEFAULT 0")
+        self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS taker_buy_quote_asset_volume Float64 DEFAULT 0")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_agg_trades_gold (event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),aggregate_trade_id UInt64,price Float64,quantity Float64,first_trade_id UInt64,last_trade_id UInt64,trade_time DateTime64(3,'UTC'),buyer_is_market_maker Bool,collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,aggregate_trade_id)")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_order_book_depth_gold (symbol LowCardinality(String),last_update_id UInt64,bids String,asks String,bid_volume Float64,ask_volume Float64,order_book_imbalance Float64,observed_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(observed_at) ORDER BY (symbol,last_update_id)")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_futures_liquidations_gold (event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),side LowCardinality(String),price Float64,quantity Float64,order_id UInt64,order_type LowCardinality(String),time_in_force LowCardinality(String),order_status LowCardinality(String),average_price Float64,filled_quantity Float64,order_time DateTime64(3,'UTC'),collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,order_id,order_time)")
+    def insert_market_metric_rows(self, dataset, rows):
+        tables={"klines":"crypto_klines_gold","agg_trades":"crypto_agg_trades_gold","order_book_depth":"crypto_order_book_depth_gold","futures_liquidations":"crypto_futures_liquidations_gold"}
+        if dataset not in tables: raise ValueError(f"Unknown market metrics dataset: {dataset}")
+        return self._insert_json_rows(tables[dataset],rows)

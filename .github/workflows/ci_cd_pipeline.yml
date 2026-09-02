@@ -1,0 +1,98 @@
+name: Systems Graduation Thesis CI/CD
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test ${{ matrix.system }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        system: [SYS-02, SYS-05, SYS-06]
+    defaults:
+      run:
+        working-directory: ${{ matrix.system }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: ${{ matrix.system }}/requirements.txt
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install flake8 pytest && python -m pip install -r requirements.txt
+      - name: Lint critical Python errors
+        run: |
+          targets="src tests"
+          [ -d dags ] && targets="$targets dags"
+          python -m flake8 $targets --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Run SYS-05 integration dependencies
+        if: matrix.system == 'SYS-05'
+        env:
+          MINIO_ACCESS_KEY: ciadmin
+          MINIO_SECRET_KEY: ci-minio-secret
+          CLICKHOUSE_USER: ciadmin
+          CLICKHOUSE_PASSWORD: ci-clickhouse-secret
+          POSTGRES_USER: ciadmin
+          POSTGRES_PASSWORD: ci-postgres-secret
+          POSTGRES_DB: cidb
+          MINIO_API_PORT: 9000
+          MINIO_CONSOLE_PORT: 9001
+          CLICKHOUSE_HTTP_PORT: 8123
+          CLICKHOUSE_NATIVE_PORT: 9004
+          POSTGRES_HOST_PORT: 5432
+        run: |
+          docker compose up -d --wait minio_s3 clickhouse_server
+          for attempt in {1..30}; do
+            curl --fail --silent --user "$CLICKHOUSE_USER:$CLICKHOUSE_PASSWORD" "http://127.0.0.1:$CLICKHOUSE_HTTP_PORT/?query=SELECT%201" && exit 0
+            sleep 2
+          done
+          exit 1
+      - name: Run tests
+        run: python -m pytest tests -q
+      - name: Stop SYS-05 integration dependencies
+        if: always() && matrix.system == 'SYS-05'
+        run: docker compose down -v
+
+  build:
+    name: Build containers and validate Compose
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build SYS-02 Airflow image
+        run: docker build --file SYS-02/Dockerfile --tag systems-thesis/sys02:ci SYS-02
+      - name: Build SYS-06 dispatcher image
+        run: docker build --file SYS-06/Dockerfile.v2 --tag systems-thesis/sys06:ci SYS-06
+      - name: Validate all Compose definitions
+        env:
+          POSTGRES_USER: ciadmin
+          POSTGRES_PASSWORD: ci-postgres-secret
+          POSTGRES_DB: cidb
+          POSTGRES_HOST_PORT: 5432
+          AIRFLOW_FERNET_KEY: ci-fernet-key
+          AIRFLOW_ADMIN_USERNAME: ciadmin
+          AIRFLOW_ADMIN_PASSWORD: ci-airflow-secret
+          AIRFLOW_ADMIN_EMAIL: ci@example.invalid
+          AIRFLOW_WEBSERVER_PORT: 8085
+          MINIO_ACCESS_KEY: ciadmin
+          MINIO_SECRET_KEY: ci-minio-secret
+          MINIO_ENDPOINT: host.docker.internal:9000
+          MINIO_API_PORT: 9000
+          MINIO_CONSOLE_PORT: 9001
+          CLICKHOUSE_HOST: host.docker.internal
+          CLICKHOUSE_PORT: 8123
+          CLICKHOUSE_USER: ciadmin
+          CLICKHOUSE_PASSWORD: ci-clickhouse-secret
+          CLICKHOUSE_HTTP_PORT: 8123
+          CLICKHOUSE_NATIVE_PORT: 9004
+        run: |
+          (cd SYS-02 && docker compose config -q)
+          (cd SYS-05 && docker compose config -q)
+          (cd SYS-06 && docker compose --env-file .env.example -f docker-compose.v2.yml config -q)

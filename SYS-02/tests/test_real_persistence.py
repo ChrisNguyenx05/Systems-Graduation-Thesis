@@ -34,3 +34,20 @@ def test_clickhouse_failure_fails_task_instead_of_returning_mock_success():
     with patch("sys02_orchestration.operators.clickhouse_operator.requests.post", side_effect=Exception("network unavailable")):
         with pytest.raises(RuntimeError, match="ClickHouse query failed"):
             operator.execute_sql("SELECT 1")
+
+
+def test_bronze_cleanup_deletes_only_expired_objects():
+    from datetime import datetime, timedelta, timezone
+    from types import SimpleNamespace
+    client = Mock()
+    client.bucket_exists.return_value = True
+    now = datetime.now(timezone.utc)
+    client.list_objects.return_value = [
+        SimpleNamespace(object_name="expired.json", last_modified=now - timedelta(days=31), size=12),
+        SimpleNamespace(object_name="recent.json", last_modified=now - timedelta(days=29), size=34),
+    ]
+    operator = LakehouseTaskOperator()
+    with patch.object(operator, "_client", return_value=client):
+        result = operator.clean_expired_bronze_files(retention_days=30)
+    assert result == {"bucket": "crypto-bronze", "retention_days": 30, "files_purged": 1, "reclaimed_bytes": 12, "status": "SUCCESS"}
+    client.remove_object.assert_called_once_with("crypto-bronze", "expired.json")
