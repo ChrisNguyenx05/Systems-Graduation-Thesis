@@ -23,7 +23,7 @@ if (Test-Path "SYS-05/docker-compose.yml") {
 }
 
 # Dừng các compose khác nếu có
-$otherServices = @("SYS-01", "SYS-03", "SYS-04")
+$otherServices = @("Admin_Portal", "SYS-01", "SYS-03", "SYS-04")
 foreach ($svc in $otherServices) {
     if (Test-Path "$svc/docker-compose.yml") {
         Write-Host "Đang dừng $svc..." -ForegroundColor Yellow

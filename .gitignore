@@ -5,16 +5,60 @@
 *.key
 *.pem
 
-# Cloudflare Tunnel credentials
+# Cloudflare Tunnel credentials and runtime logs
 cloudflared/*.json
 cloudflared/config.yml
+tunnel.log
+TUNNEL_URL.txt
+*.log
 
-# Local runtime data and logs
-**/data/
-**/logs/
+# Large Datasets and AI raw data
+**/Dataset/
+*.csv
+*.parquet
+
+# Python runtime and caches
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Local migration exports (not source code)
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local runtime data and storage binds
+**/data/
+**/logs/
+
+# Local migration exports
 /migration-backup/
-**/.pytest_cache/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

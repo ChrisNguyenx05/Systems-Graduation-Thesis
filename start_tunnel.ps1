@@ -1,76 +1,78 @@
 # ==============================================================================
-# 🌐 PUBLIC DEMO TUNNEL - CLOUDFLARE / LOCALTUNNEL / NGROK
+# PUBLIC DEMO TUNNEL - CLOUDFLARE / LOCALTUNNEL / NGROK
 # ==============================================================================
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  🌐 KHỞI ĐỘNG ĐƯỜNG HẦM DEMO CÔNG KHAI (PUBLIC HTTPS TUNNEL 0Đ)     " -ForegroundColor Cyan
+Write-Host "  KHOI DONG DUONG HAM DEMO CONG KHAI (PUBLIC HTTPS TUNNEL 0D)         " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Chọn dịch vụ bạn muốn public đường hầm HTTPS ra ngoài Internet để gửi link cho Hội đồng chấm thi:" -ForegroundColor Yellow
-Write-Host "  [1] SYS-02: Apache Airflow (Port 8085)" -ForegroundColor White
-Write-Host "  [2] SYS-05: MinIO S3 Console (Port 9001)" -ForegroundColor White
-Write-Host "  [3] SYS-01: Streamlit Dashboard (Port 8501)" -ForegroundColor White
-Write-Host "  [4] SYS-04: FastAPI Swagger Docs (Port 8000)" -ForegroundColor White
-Write-Host "  [5] SYS-03: Grafana Monitoring (Port 3000)" -ForegroundColor White
-Write-Host "  [6] Tuỳ chọn Port khác" -ForegroundColor White
+Write-Host "Chon dich vu ban muon public duong ham HTTPS ra ngoai Internet:" -ForegroundColor Yellow
+Write-Host "  [1] NHFinance Admin Portal (Port 8090) [KHUYEN DUNG - ALL-IN-ONE]" -ForegroundColor Green
+Write-Host "  [2] SYS-02: Apache Airflow (Port 8085)" -ForegroundColor White
+Write-Host "  [3] SYS-05: MinIO S3 Console (Port 9001)" -ForegroundColor White
+Write-Host "  [4] SYS-01: Streamlit Dashboard (Port 8501)" -ForegroundColor White
+Write-Host "  [5] SYS-04: FastAPI Swagger Docs (Port 8000)" -ForegroundColor White
+Write-Host "  [6] SYS-03: Grafana Monitoring (Port 3000)" -ForegroundColor White
+Write-Host "  [7] Tuy chon Port khac" -ForegroundColor White
 Write-Host ""
 
-$choice = Read-Host "Nhập lựa chọn của bạn (1-6) [Mặc định: 1]"
+$choice = Read-Host "Nhap lua chon cua ban (1-7) [Mac dinh: 1 - Admin Portal]"
 if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "1" }
 
-$targetPort = 8085
-$serviceName = "SYS-02 Airflow"
+$targetPort = 8090
+$serviceName = "NHFinance Admin Portal"
 
 switch ($choice) {
-    "1" { $targetPort = 8085; $serviceName = "SYS-02 Airflow" }
-    "2" { $targetPort = 9001; $serviceName = "SYS-05 MinIO Console" }
-    "3" { $targetPort = 8501; $serviceName = "SYS-01 Streamlit Dashboard" }
-    "4" { $targetPort = 8000; $serviceName = "SYS-04 FastAPI" }
-    "5" { $targetPort = 3000; $serviceName = "SYS-03 Grafana" }
-    "6" { 
-        $custom = Read-Host "Nhập số cổng Port cần mở"
+    "1" { $targetPort = 8090; $serviceName = "NHFinance Admin Portal" }
+    "2" { $targetPort = 8085; $serviceName = "SYS-02 Airflow" }
+    "3" { $targetPort = 9001; $serviceName = "SYS-05 MinIO Console" }
+    "4" { $targetPort = 8501; $serviceName = "SYS-01 Streamlit Dashboard" }
+    "5" { $targetPort = 8000; $serviceName = "SYS-04 FastAPI" }
+    "6" { $targetPort = 3000; $serviceName = "SYS-03 Grafana" }
+    "7" { 
+        $custom = Read-Host "Nhap so cong Port can mo"
         $targetPort = [int]$custom
         $serviceName = "Custom Port $targetPort"
     }
-    Default { $targetPort = 8085; $serviceName = "SYS-02 Airflow" }
+    Default { $targetPort = 8090; $serviceName = "NHFinance Admin Portal" }
 }
 
 Write-Host ""
-Write-Host "🚀 Đang chuẩn bị đường hầm HTTPS cho $serviceName (Port $targetPort)..." -ForegroundColor Green
+Write-Host "Dang chuan bi duong ham HTTPS cho $serviceName (Port $targetPort)..." -ForegroundColor Green
 
-# 1. Thử dùng Cloudflare Tunnel (Miễn phí 100%, không cần đăng ký tài khoản)
+# 1. Thu dung Cloudflare Tunnel (Mien phi 100%, khong can dang ky tai khoan)
 $hasCloudflared = Get-Command cloudflared -ErrorAction SilentlyContinue
 if ($hasCloudflared) {
-    Write-Host "⚡ Sử dụng Cloudflare Tunnel (Miễn phí & Bảo mật)..." -ForegroundColor Cyan
-    Write-Host "👉 Đường link public https://...trycloudflare.com sẽ xuất hiện bên dưới:" -ForegroundColor Yellow
+    Write-Host "Su dung Cloudflare Tunnel (Mien phi & Bao mat)..." -ForegroundColor Cyan
+    Write-Host "Duong link public https://...trycloudflare.com se xuat hien ben duoi:" -ForegroundColor Yellow
     cloudflared tunnel --url "http://localhost:$targetPort"
     exit 0
 }
 
-# 2. Thử dùng npx localtunnel (Node.js)
+# 2. Thu dung npx localtunnel (Node.js)
 $hasNpx = Get-Command npx -ErrorAction SilentlyContinue
 if ($hasNpx) {
-    Write-Host "⚡ Sử dụng Localtunnel qua NPX (Node.js)..." -ForegroundColor Cyan
-    Write-Host "👉 Đường link public https://...loca.lt sẽ xuất hiện bên dưới:" -ForegroundColor Yellow
+    Write-Host "Su dung Localtunnel qua NPX (Node.js)..." -ForegroundColor Cyan
+    Write-Host "Duong link public https://...loca.lt se xuat hien ben duoi:" -ForegroundColor Yellow
     npx localtunnel --port $targetPort
     exit 0
 }
 
-# 3. Thử dùng Ngrok
+# 3. Thu dung Ngrok
 $hasNgrok = Get-Command ngrok -ErrorAction SilentlyContinue
 if ($hasNgrok) {
-    Write-Host "⚡ Sử dụng Ngrok..." -ForegroundColor Cyan
+    Write-Host "Su dung Ngrok..." -ForegroundColor Cyan
     ngrok http $targetPort
     exit 0
 }
 
-# Nếu chưa cài công cụ nào
-Write-Host "⚠️ Chưa phát hiện công cụ Tunnel (cloudflared, localtunnel hoặc ngrok) trong máy." -ForegroundColor Yellow
+# Neu chua cai cong cu nao
+Write-Host "Chua phat hien cong cu Tunnel (cloudflared, localtunnel hoac ngrok) trong may." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "💡 HƯỚNG DẪN CÀI ĐẶT NHANH 1 TRONG CÁC CÔNG CỤ SAU (CHỈ CẦN 1 CÔNG CỤ):" -ForegroundColor Magenta
-Write-Host "  Cách 1 (Khuyên dùng): Tải cloudflared.exe từ https://github.com/cloudflare/cloudflared/releases" -ForegroundColor White
-Write-Host "                        hoặc chạy lệnh: winget install Cloudflare.cloudflared" -ForegroundColor White
-Write-Host "  Cách 2: Cài Node.js rồi chạy lại script này (sẽ tự động dùng npx localtunnel)" -ForegroundColor White
-Write-Host "  Cách 3: Tải ngrok từ https://ngrok.com/download" -ForegroundColor White
+Write-Host "HUONG DAN CAI DAT NHANH 1 TRONG CAC CONG CU SAU (CHI CAN 1 CONG CU):" -ForegroundColor Magenta
+Write-Host "  Cach 1 (Khuyen dung): Tai cloudflared.exe tu https://github.com/cloudflare/cloudflared/releases" -ForegroundColor White
+Write-Host "                        hoac chay lenh: winget install Cloudflare.cloudflared" -ForegroundColor White
+Write-Host "  Cach 2: Cai Node.js roi chay lai script nay (se tu dong dung npx localtunnel)" -ForegroundColor White
+Write-Host "  Cach 3: Tai ngrok tu https://ngrok.com/download" -ForegroundColor White
 Write-Host ""

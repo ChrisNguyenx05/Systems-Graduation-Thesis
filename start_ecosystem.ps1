@@ -52,8 +52,8 @@ if (Test-Path "SYS-02/docker-compose.yml") {
     Write-Host "   ⚠️ Không tìm thấy file SYS-02/docker-compose.yml" -ForegroundColor DarkGray
 }
 
-# 4. Kiểm tra các dịch vụ khác (SYS-01, SYS-03, SYS-04) nếu có file compose
-$otherServices = @("SYS-01", "SYS-03", "SYS-04")
+# 4. Kiểm tra các dịch vụ khác (Admin_Portal, SYS-04, WSIS, SYS-06, SYS-01, SYS-03) nếu có file compose
+$otherServices = @("Admin_Portal", "SYS-04", "WSIS", "SYS-06", "SYS-01", "SYS-03")
 foreach ($svc in $otherServices) {
     if (Test-Path "$svc/docker-compose.yml") {
         Write-Host ""
@@ -69,9 +69,11 @@ Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "  🎉 HỆ THỐNG ĐÃ SẴN SÀNG ĐỂ KIỂM TRA & DEMO                         " -ForegroundColor Green
 Write-Host "  👉 Portal:             file://$((Get-Location).Path.Replace('\','/'))/index.html" -ForegroundColor White
-Write-Host "  👉 SYS-02 Airflow UI:   http://localhost:8085 (admin123 / admin123)" -ForegroundColor White
-Write-Host "  👉 SYS-05 MinIO UI:     http://localhost:9001 (admin123 / admin123)" -ForegroundColor White
-Write-Host "  👉 SYS-05 ClickHouse:   http://localhost:8123/play" -ForegroundColor White
+Write-Host "  👉 Admin Portal:       http://localhost:8090 (nhfinanceadmin / nhathuy123)" -ForegroundColor White
+Write-Host "  👉 SYS-04 AI Models:   http://localhost:8000/docs" -ForegroundColor White
+Write-Host "  👉 SYS-02 Airflow UI:  http://localhost:8085 (admin123 / admin123)" -ForegroundColor White
+Write-Host "  👉 SYS-05 MinIO UI:    http://localhost:9001 (admin123 / admin123)" -ForegroundColor White
+Write-Host "  👉 SYS-05 ClickHouse:  http://localhost:8123/play" -ForegroundColor White
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 

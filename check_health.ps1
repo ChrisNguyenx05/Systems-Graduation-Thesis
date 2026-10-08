@@ -20,7 +20,10 @@ $services = @(
     @{ System = "SYS-05"; Name = "MinIO Web Console";             Port = 9001; Type = "Web UI" },
     @{ System = "SYS-05"; Name = "ClickHouse OLAP HTTP";          Port = 8123; Type = "Database" },
     @{ System = "SYS-05"; Name = "ClickHouse Native TCP";         Port = 9004; Type = "Database" },
-    @{ System = "SYS-05"; Name = "Enterprise Metadata Postgres";  Port = 5432; Type = "Database" }
+    @{ System = "SYS-05"; Name = "Enterprise Metadata Postgres";  Port = 5432; Type = "Database" },
+    @{ System = "WSIS";   Name = "WebSocket Ingestion Collector"; Port = 8005; Type = "Realtime Engine" },
+    @{ System = "SYS-06"; Name = "Alert Dispatcher Microservice"; Port = 8080; Type = "Alert System" },
+    @{ System = "PORTAL"; Name = "NHFinance Admin Portal";         Port = 8090; Type = "Command Center" }
 )
 
 $results = @()
@@ -29,17 +32,23 @@ foreach ($svc in $services) {
     $port = $svc.Port
     $isOpen = $false
     
-    try {
-        $tcp = New-Object System.Net.Sockets.TcpClient
-        $connect = $tcp.BeginConnect("127.0.0.1", $port, $null, $null)
-        $wait = $connect.AsyncWaitHandle.WaitOne(400, $false)
-        if ($wait) {
-            $tcp.EndConnect($connect)
-            $isOpen = $true
+    # Check IPv4 and IPv6 loopback
+    $hostsToCheck = @("127.0.0.1", "localhost")
+    foreach ($hostName in $hostsToCheck) {
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $connect = $tcp.BeginConnect($hostName, $port, $null, $null)
+            $wait = $connect.AsyncWaitHandle.WaitOne(450, $false)
+            if ($wait -and $tcp.Connected) {
+                $tcp.EndConnect($connect)
+                $isOpen = $true
+                $tcp.Close()
+                break
+            }
+            $tcp.Close()
+        } catch {
+            # continue to next host candidate
         }
-        $tcp.Close()
-    } catch {
-        $isOpen = $false
     }
 
     if ($isOpen) {
