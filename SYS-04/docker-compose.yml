@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   sys04-ai-models:
     build:

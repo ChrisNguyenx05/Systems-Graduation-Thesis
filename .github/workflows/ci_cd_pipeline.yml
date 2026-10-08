@@ -14,7 +14,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        system: [SYS-02, SYS-05, SYS-06]
+        include:
+          - system: SYS-02
+            dir: SYS-02
+          - system: SYS-04
+            dir: SYS-04
+          - system: SYS-05
+            dir: SYS-05
+          - system: SYS-06
+            dir: SYS-06
+          - system: WSIS
+            dir: WSIS
+          - system: Admin_Portal
+            dir: Admin_Portal/backend
     env:
       MINIO_ENDPOINT: 127.0.0.1:9000
       MINIO_ACCESS_KEY: ciadmin
@@ -31,25 +43,31 @@ jobs:
       CLICKHOUSE_HTTP_PORT: 8123
       CLICKHOUSE_NATIVE_PORT: 9004
       POSTGRES_HOST_PORT: 5432
-    defaults:
-      run:
-        working-directory: ${{ matrix.system }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           cache: pip
-          cache-dependency-path: ${{ matrix.system }}/requirements.txt
+          cache-dependency-path: ${{ matrix.dir }}/requirements.txt
       - name: Install test dependencies
-        run: python -m pip install --upgrade pip && python -m pip install flake8 pytest && python -m pip install -r requirements.txt
-      - name: Lint critical Python errors
+        working-directory: ${{ matrix.dir }}
         run: |
-          targets="src tests"
+          python -m pip install --upgrade pip
+          python -m pip install flake8 pytest httpx
+          python -m pip install -r requirements.txt
+      - name: Lint critical Python errors
+        working-directory: ${{ matrix.dir }}
+        run: |
+          targets="."
+          [ -d src ] && targets="src"
+          [ -d app ] && targets="app"
+          [ -d tests ] && targets="$targets tests"
           [ -d dags ] && targets="$targets dags"
           python -m flake8 $targets --count --select=E9,F63,F7,F82 --show-source --statistics
       - name: Run SYS-05 integration dependencies
         if: matrix.system == 'SYS-05'
+        working-directory: SYS-05
         env:
           MINIO_ACCESS_KEY: ciadmin
           MINIO_SECRET_KEY: ci-minio-secret
@@ -71,21 +89,44 @@ jobs:
           done
           exit 1
       - name: Run tests
+        working-directory: ${{ matrix.dir }}
         run: python -m pytest tests -q
       - name: Stop SYS-05 integration dependencies
         if: always() && matrix.system == 'SYS-05'
+        working-directory: SYS-05
         run: docker compose down -v
+
+  architecture-docs:
+    name: Validate Architecture & Documentation (SYS-01, SYS-03)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Architecture and Context Specifications
+        run: |
+          for sys in SYS-01 SYS-03; do
+            echo "Checking specification integrity for $sys..."
+            test -f "$sys/CONTEXT.md" || { echo "❌ Missing $sys/CONTEXT.md"; exit 1; }
+            test -f "$sys/README.md" || { echo "❌ Missing $sys/README.md"; exit 1; }
+            test -d "$sys/docs" || { echo "❌ Missing $sys/docs directory"; exit 1; }
+          done
+          echo "✅ All architecture specifications and documentation verified."
 
   build:
     name: Build containers and validate Compose
-    needs: test
+    needs: [test, architecture-docs]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build SYS-02 Airflow image
         run: docker build --file SYS-02/Dockerfile --tag systems-thesis/sys02:ci SYS-02
+      - name: Build SYS-04 AI inference image
+        run: docker build --file SYS-04/Dockerfile --tag systems-thesis/sys04:ci SYS-04
       - name: Build SYS-06 dispatcher image
         run: docker build --file SYS-06/Dockerfile.v2 --tag systems-thesis/sys06:ci SYS-06
+      - name: Build WSIS collector image
+        run: docker build --file WSIS/Dockerfile --tag systems-thesis/wsis:ci WSIS
+      - name: Build Admin Portal gateway image
+        run: docker build --file Admin_Portal/backend/Dockerfile --tag systems-thesis/admin-portal:ci Admin_Portal
       - name: Validate all Compose definitions
         env:
           POSTGRES_USER: ciadmin
@@ -110,5 +151,8 @@ jobs:
           CLICKHOUSE_NATIVE_PORT: 9004
         run: |
           (cd SYS-02 && docker compose config -q)
+          (cd SYS-04 && cp .env.example .env && docker compose config -q && rm .env)
           (cd SYS-05 && docker compose config -q)
           (cd SYS-06 && cp .env.example .env && docker compose -f docker-compose.v2.yml config -q && rm .env)
+          (cd WSIS && cp .env.example .env && docker compose config -q && rm .env)
+          (cd Admin_Portal && docker compose config -q)
