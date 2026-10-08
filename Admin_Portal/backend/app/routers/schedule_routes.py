@@ -41,7 +41,6 @@ def load_schedule_states() -> Dict[str, bool]:
         return {}
 
 def save_schedule_states(states: Dict[str, bool]):
-    global _SCHEDULES_CACHE
     try:
         SCHEDULE_STATES_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(SCHEDULE_STATES_FILE, "w", encoding="utf-8") as f:

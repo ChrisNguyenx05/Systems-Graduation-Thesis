@@ -108,7 +108,7 @@ def generate_baseline_candles(symbol: str, count: int = 70) -> List[Dict[str, An
 
 def load_all_models():
     """Load all model suites from persistent storage into memory without namespace collisions."""
-    global lstm_service, anomaly_service, fraud_predictor, models_status
+    global lstm_service, anomaly_service, fraud_predictor
     logger.info("Loading AI model suites from %s...", MODELS_DIR)
 
     # 1. LSTM Price Forecaster
