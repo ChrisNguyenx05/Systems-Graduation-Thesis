@@ -1,0 +1,24 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python runtime artifacts and environments
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Runtime logs and data buffers
+logs/
+*.log
+data/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

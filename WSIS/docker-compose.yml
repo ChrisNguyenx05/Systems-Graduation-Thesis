@@ -1,0 +1,23 @@
+services:
+  wsis_collector:
+    image: wsis-collector:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wsis_websocket_collector
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
+      - WSIS_HTTP_PORT=8005
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
