@@ -1,0 +1,1231 @@
+{
+  "generated_at": "2026-10-02 16:17:53 UTC",
+  "total_symbols": 6,
+  "total_batch_time_sec": 165.1,
+  "models": [
+    {
+      "symbol": "BTCUSDT",
+      "trained_at": "2026-10-02 16:15:38 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "BTCUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.606562,
+        "score_min": -0.094094,
+        "score_max": 0.248056
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 35,
+        "alert_rate_pct": 1.999,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.2044,
+          "std_score": 0.1487,
+          "median_score": 0.1579,
+          "p75_score": 0.2401,
+          "p95_score": 0.4933,
+          "p99_score": 0.8347,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 18,
+          "CRITICAL_ANOMALY": 17,
+          "ELEVATED": 82,
+          "NORMAL": 1634
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": 0.0046,
+            "anomaly_mean": 0.012,
+            "surge_multiplier": 2.59
+          },
+          "price_velocity_1h": {
+            "normal_mean": 0.0133,
+            "anomaly_mean": 0.3219,
+            "surge_multiplier": 24.14
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 0.9818,
+            "anomaly_mean": 4.0441,
+            "surge_multiplier": 4.12
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 0.9977,
+            "anomaly_mean": 3.2824,
+            "surge_multiplier": 3.29
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0014,
+            "anomaly_mean": 0.0063,
+            "surge_multiplier": 4.52
+          },
+          "bar_range_bps": {
+            "normal_mean": 23.0517,
+            "anomaly_mean": 104.1816,
+            "surge_multiplier": 4.52
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.4909,
+            "anomaly_mean": 0.4908,
+            "surge_multiplier": 1.0
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": -0.0183,
+            "anomaly_mean": -0.0183,
+            "surge_multiplier": 1.0
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-15 13:44:59.999000+00:00",
+            "close_price": 76422.56,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 108.42,
+            "volume_surge_ratio": 6.29,
+            "trades_surge_ratio": 5.56,
+            "volatility_parkinson": 0.0065
+          },
+          {
+            "timestamp_utc": "2026-09-16 18:14:59.999000+00:00",
+            "close_price": 75798.01,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 166.54,
+            "volume_surge_ratio": 6.77,
+            "trades_surge_ratio": 5.01,
+            "volatility_parkinson": 0.00998
+          },
+          {
+            "timestamp_utc": "2026-09-21 08:44:59.999000+00:00",
+            "close_price": 83531.23,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 237.77,
+            "volume_surge_ratio": 10.48,
+            "trades_surge_ratio": 5.92,
+            "volatility_parkinson": 0.01434
+          },
+          {
+            "timestamp_utc": "2026-09-15 18:44:59.999000+00:00",
+            "close_price": 75773.02,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 164.99,
+            "volume_surge_ratio": 2.78,
+            "trades_surge_ratio": 3.06,
+            "volatility_parkinson": 0.00984
+          },
+          {
+            "timestamp_utc": "2026-09-15 18:59:59.999000+00:00",
+            "close_price": 76000.0,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 162.79,
+            "volume_surge_ratio": 4.18,
+            "trades_surge_ratio": 3.58,
+            "volatility_parkinson": 0.00983
+          }
+        ],
+        "anomalies_detected": 35,
+        "anomaly_rate_pct": 1.999
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 26.687,
+        "p50_latency_ms": 24.486,
+        "p90_latency_ms": 35.677,
+        "p95_latency_ms": 42.614,
+        "p99_latency_ms": 58.526,
+        "max_latency_ms": 81.08,
+        "throughput_fps": 37.5
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "BTCUSDT",
+        "timestamp": 1790793,
+        "close_price": 83854.4609375,
+        "is_anomaly": false,
+        "anomaly_score": 0.1104,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": -0.0779,
+          "price_velocity_1h": -0.1828,
+          "volume_surge_ratio": 0.424,
+          "trades_surge_ratio": 0.3863,
+          "volatility_parkinson": 0.001,
+          "bar_range_bps": 16.0434,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.5
+    },
+    {
+      "symbol": "ETHUSDT",
+      "trained_at": "2026-10-02 16:16:06 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "ETHUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.618453,
+        "score_min": -0.093377,
+        "score_max": 0.265622
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 38,
+        "alert_rate_pct": 2.17,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.2114,
+          "std_score": 0.1555,
+          "median_score": 0.1583,
+          "p75_score": 0.2625,
+          "p95_score": 0.5133,
+          "p99_score": 0.8588,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 19,
+          "CRITICAL_ANOMALY": 19,
+          "ELEVATED": 96,
+          "NORMAL": 1617
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": 0.0025,
+            "anomaly_mean": 0.0413,
+            "surge_multiplier": 16.46
+          },
+          "price_velocity_1h": {
+            "normal_mean": 0.0111,
+            "anomaly_mean": 0.1361,
+            "surge_multiplier": 12.26
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 0.9615,
+            "anomaly_mean": 4.4454,
+            "surge_multiplier": 4.62
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 0.9842,
+            "anomaly_mean": 3.8823,
+            "surge_multiplier": 3.94
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0019,
+            "anomaly_mean": 0.0084,
+            "surge_multiplier": 4.32
+          },
+          "bar_range_bps": {
+            "normal_mean": 32.303,
+            "anomaly_mean": 139.5452,
+            "surge_multiplier": 4.32
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.4864,
+            "anomaly_mean": 0.4923,
+            "surge_multiplier": 1.01
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": -0.0272,
+            "anomaly_mean": -0.0154,
+            "surge_multiplier": 0.57
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-16 18:14:59.999000+00:00",
+            "close_price": 2402.52,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 252.4,
+            "volume_surge_ratio": 7.89,
+            "trades_surge_ratio": 6.11,
+            "volatility_parkinson": 0.01517
+          },
+          {
+            "timestamp_utc": "2026-09-15 18:44:59.999000+00:00",
+            "close_price": 2387.33,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 238.93,
+            "volume_surge_ratio": 4.43,
+            "trades_surge_ratio": 3.75,
+            "volatility_parkinson": 0.01422
+          },
+          {
+            "timestamp_utc": "2026-09-24 09:44:59.999000+00:00",
+            "close_price": 2640.14,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 207.83,
+            "volume_surge_ratio": 5.27,
+            "trades_surge_ratio": 3.12,
+            "volatility_parkinson": 0.01254
+          },
+          {
+            "timestamp_utc": "2026-09-14 20:29:59.999000+00:00",
+            "close_price": 2599.05,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 191.65,
+            "volume_surge_ratio": 4.1,
+            "trades_surge_ratio": 4.82,
+            "volatility_parkinson": 0.01155
+          },
+          {
+            "timestamp_utc": "2026-09-20 02:44:59.999000+00:00",
+            "close_price": 2589.47,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 107.82,
+            "volume_surge_ratio": 5.24,
+            "trades_surge_ratio": 3.34,
+            "volatility_parkinson": 0.00645
+          }
+        ],
+        "anomalies_detected": 38,
+        "anomaly_rate_pct": 2.17
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 25.041,
+        "p50_latency_ms": 23.378,
+        "p90_latency_ms": 30.528,
+        "p95_latency_ms": 38.507,
+        "p99_latency_ms": 55.93,
+        "max_latency_ms": 97.029,
+        "throughput_fps": 39.9
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "ETHUSDT",
+        "timestamp": 1790793,
+        "close_price": 2674.4599609375,
+        "is_anomaly": false,
+        "anomaly_score": 0.1217,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": -0.2056,
+          "price_velocity_1h": -0.1799,
+          "volume_surge_ratio": 0.4211,
+          "trades_surge_ratio": 0.381,
+          "volatility_parkinson": 0.0017,
+          "bar_range_bps": 27.7071,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.41
+    },
+    {
+      "symbol": "BNBUSDT",
+      "trained_at": "2026-10-02 16:16:33 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "BNBUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.611068,
+        "score_min": -0.100242,
+        "score_max": 0.254044
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 31,
+        "alert_rate_pct": 1.77,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.2099,
+          "std_score": 0.148,
+          "median_score": 0.1641,
+          "p75_score": 0.2611,
+          "p95_score": 0.4944,
+          "p99_score": 0.7715,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 19,
+          "CRITICAL_ANOMALY": 12,
+          "ELEVATED": 97,
+          "NORMAL": 1623
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": 0.0028,
+            "anomaly_mean": -0.0128,
+            "surge_multiplier": -4.5
+          },
+          "price_velocity_1h": {
+            "normal_mean": 0.0108,
+            "anomaly_mean": -0.0031,
+            "surge_multiplier": -0.29
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 0.9787,
+            "anomaly_mean": 4.0178,
+            "surge_multiplier": 4.11
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 0.988,
+            "anomaly_mean": 2.8614,
+            "surge_multiplier": 2.9
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0017,
+            "anomaly_mean": 0.0066,
+            "surge_multiplier": 3.96
+          },
+          "bar_range_bps": {
+            "normal_mean": 27.7621,
+            "anomaly_mean": 109.8864,
+            "surge_multiplier": 3.96
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.4972,
+            "anomaly_mean": 0.4927,
+            "surge_multiplier": 0.99
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": -0.0056,
+            "anomaly_mean": -0.0145,
+            "surge_multiplier": 2.57
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-22 01:44:59.999000+00:00",
+            "close_price": 788.37,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 169.21,
+            "volume_surge_ratio": 6.62,
+            "trades_surge_ratio": 2.39,
+            "volatility_parkinson": 0.01015
+          },
+          {
+            "timestamp_utc": "2026-09-20 02:59:59.999000+00:00",
+            "close_price": 747.83,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 129.71,
+            "volume_surge_ratio": 5.9,
+            "trades_surge_ratio": 4.28,
+            "volatility_parkinson": 0.00776
+          },
+          {
+            "timestamp_utc": "2026-09-23 14:14:59.999000+00:00",
+            "close_price": 769.63,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 247.78,
+            "volume_surge_ratio": 6.37,
+            "trades_surge_ratio": 4.1,
+            "volatility_parkinson": 0.01482
+          },
+          {
+            "timestamp_utc": "2026-09-23 14:29:59.999000+00:00",
+            "close_price": 760.19,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 137.07,
+            "volume_surge_ratio": 4.63,
+            "trades_surge_ratio": 4.51,
+            "volatility_parkinson": 0.00818
+          },
+          {
+            "timestamp_utc": "2026-09-25 11:29:59.999000+00:00",
+            "close_price": 779.76,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 97.21,
+            "volume_surge_ratio": 5.43,
+            "trades_surge_ratio": 2.91,
+            "volatility_parkinson": 0.00583
+          }
+        ],
+        "anomalies_detected": 31,
+        "anomaly_rate_pct": 1.77
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 24.435,
+        "p50_latency_ms": 21.793,
+        "p90_latency_ms": 33.663,
+        "p95_latency_ms": 41.606,
+        "p99_latency_ms": 59.119,
+        "max_latency_ms": 88.587,
+        "throughput_fps": 40.9
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "BNBUSDT",
+        "timestamp": 1790793,
+        "close_price": 767.1599731445312,
+        "is_anomaly": false,
+        "anomaly_score": 0.1553,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": -0.1926,
+          "price_velocity_1h": -0.1835,
+          "volume_surge_ratio": 0.3937,
+          "trades_surge_ratio": 0.4436,
+          "volatility_parkinson": 0.0019,
+          "bar_range_bps": 31.2845,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.33
+    },
+    {
+      "symbol": "AAPLBUSDT",
+      "trained_at": "2026-10-02 16:17:00 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "AAPLBUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.639824,
+        "score_min": -0.058048,
+        "score_max": 0.284011
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 21,
+        "alert_rate_pct": 1.199,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.1864,
+          "std_score": 0.1281,
+          "median_score": 0.1515,
+          "p75_score": 0.2244,
+          "p95_score": 0.4344,
+          "p99_score": 0.6907,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 10,
+          "CRITICAL_ANOMALY": 11,
+          "ELEVATED": 60,
+          "NORMAL": 1670
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": -0.0012,
+            "anomaly_mean": 0.1552,
+            "surge_multiplier": -132.69
+          },
+          "price_velocity_1h": {
+            "normal_mean": -0.0003,
+            "anomaly_mean": 0.2515,
+            "surge_multiplier": -727.98
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 1.0104,
+            "anomaly_mean": 5.9372,
+            "surge_multiplier": 5.88
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 1.0195,
+            "anomaly_mean": 5.0068,
+            "surge_multiplier": 4.91
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0005,
+            "anomaly_mean": 0.005,
+            "surge_multiplier": 9.21
+          },
+          "bar_range_bps": {
+            "normal_mean": 8.9693,
+            "anomaly_mean": 82.6363,
+            "surge_multiplier": 9.21
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.5093,
+            "anomaly_mean": 0.4435,
+            "surge_multiplier": 0.87
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": 0.0185,
+            "anomaly_mean": -0.1133,
+            "surge_multiplier": -6.12
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-29 13:44:59.999000+00:00",
+            "close_price": 332.8,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 136.72,
+            "volume_surge_ratio": 9.3,
+            "trades_surge_ratio": 7.92,
+            "volatility_parkinson": 0.00816
+          },
+          {
+            "timestamp_utc": "2026-09-23 13:44:59.999000+00:00",
+            "close_price": 337.38,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 133.97,
+            "volume_surge_ratio": 6.04,
+            "trades_surge_ratio": 6.36,
+            "volatility_parkinson": 0.008
+          },
+          {
+            "timestamp_utc": "2026-09-30 14:14:59.999000+00:00",
+            "close_price": 337.14,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 105.0,
+            "volume_surge_ratio": 6.37,
+            "trades_surge_ratio": 4.0,
+            "volatility_parkinson": 0.0063
+          },
+          {
+            "timestamp_utc": "2026-09-30 13:59:59.999000+00:00",
+            "close_price": 335.79,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 108.7,
+            "volume_surge_ratio": 5.4,
+            "trades_surge_ratio": 3.03,
+            "volatility_parkinson": 0.00656
+          },
+          {
+            "timestamp_utc": "2026-09-22 13:44:59.999000+00:00",
+            "close_price": 341.29,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 144.16,
+            "volume_surge_ratio": 7.97,
+            "trades_surge_ratio": 6.1,
+            "volatility_parkinson": 0.00863
+          }
+        ],
+        "anomalies_detected": 21,
+        "anomaly_rate_pct": 1.199
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 23.516,
+        "p50_latency_ms": 21.603,
+        "p90_latency_ms": 29.15,
+        "p95_latency_ms": 35.499,
+        "p99_latency_ms": 52.522,
+        "max_latency_ms": 94.027,
+        "throughput_fps": 42.5
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "AAPLBUSDT",
+        "timestamp": 1790793,
+        "close_price": 336.80999755859375,
+        "is_anomaly": false,
+        "anomaly_score": 0.1727,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": 0.1397,
+          "price_velocity_1h": 0.1457,
+          "volume_surge_ratio": 0.0132,
+          "trades_surge_ratio": 0.0687,
+          "volatility_parkinson": 0.0011,
+          "bar_range_bps": 19.0013,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.32
+    },
+    {
+      "symbol": "AMZNBUSDT",
+      "trained_at": "2026-10-02 16:17:26 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "AMZNBUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.635281,
+        "score_min": -0.073435,
+        "score_max": 0.255159
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 33,
+        "alert_rate_pct": 1.885,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.1781,
+          "std_score": 0.146,
+          "median_score": 0.1279,
+          "p75_score": 0.2005,
+          "p95_score": 0.4764,
+          "p99_score": 0.7834,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 19,
+          "CRITICAL_ANOMALY": 14,
+          "ELEVATED": 71,
+          "NORMAL": 1647
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": -0.0004,
+            "anomaly_mean": -0.047,
+            "surge_multiplier": 113.75
+          },
+          "price_velocity_1h": {
+            "normal_mean": 0.0005,
+            "anomaly_mean": -0.2804,
+            "surge_multiplier": -537.57
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 0.965,
+            "anomaly_mean": 7.3856,
+            "surge_multiplier": 7.65
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 0.9729,
+            "anomaly_mean": 5.9435,
+            "surge_multiplier": 6.11
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0006,
+            "anomaly_mean": 0.0044,
+            "surge_multiplier": 7.74
+          },
+          "bar_range_bps": {
+            "normal_mean": 9.4268,
+            "anomaly_mean": 72.9432,
+            "surge_multiplier": 7.74
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.5163,
+            "anomaly_mean": 0.4983,
+            "surge_multiplier": 0.97
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": 0.0768,
+            "anomaly_mean": -0.0033,
+            "surge_multiplier": -0.04
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-30 14:14:59.999000+00:00",
+            "close_price": 250.56,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 99.38,
+            "volume_surge_ratio": 7.42,
+            "trades_surge_ratio": 6.25,
+            "volatility_parkinson": 0.00598
+          },
+          {
+            "timestamp_utc": "2026-09-21 13:59:59.999000+00:00",
+            "close_price": 254.69,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 82.06,
+            "volume_surge_ratio": 16.14,
+            "trades_surge_ratio": 6.88,
+            "volatility_parkinson": 0.00493
+          },
+          {
+            "timestamp_utc": "2026-09-20 10:44:59.999000+00:00",
+            "close_price": 252.49,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 107.73,
+            "volume_surge_ratio": 8.95,
+            "trades_surge_ratio": 10.85,
+            "volatility_parkinson": 0.00648
+          },
+          {
+            "timestamp_utc": "2026-09-14 13:44:59.999000+00:00",
+            "close_price": 254.97,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 159.23,
+            "volume_surge_ratio": 5.45,
+            "trades_surge_ratio": 5.82,
+            "volatility_parkinson": 0.00964
+          },
+          {
+            "timestamp_utc": "2026-09-22 13:44:59.999000+00:00",
+            "close_price": 258.21,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 173.11,
+            "volume_surge_ratio": 3.16,
+            "trades_surge_ratio": 4.33,
+            "volatility_parkinson": 0.01049
+          }
+        ],
+        "anomalies_detected": 33,
+        "anomaly_rate_pct": 1.885
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 23.139,
+        "p50_latency_ms": 21.552,
+        "p90_latency_ms": 28.778,
+        "p95_latency_ms": 33.798,
+        "p99_latency_ms": 47.385,
+        "max_latency_ms": 107.193,
+        "throughput_fps": 43.2
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "AMZNBUSDT",
+        "timestamp": 1790793,
+        "close_price": 250.52999877929688,
+        "is_anomaly": false,
+        "anomaly_score": 0.1529,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": 0.0359,
+          "price_velocity_1h": -0.3738,
+          "volume_surge_ratio": 0.0327,
+          "trades_surge_ratio": 0.2825,
+          "volatility_parkinson": 0.0013,
+          "bar_range_bps": 22.3525,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.34
+    },
+    {
+      "symbol": "DELLBUSDT",
+      "trained_at": "2026-10-02 16:17:53 UTC",
+      "hyperparameters": {
+        "contamination": 0.02,
+        "n_estimators": 100,
+        "max_samples": 256,
+        "random_state": 42,
+        "train_ratio": 0.7
+      },
+      "dataset_splits": {
+        "symbol": "DELLBUSDT",
+        "total_candles": 5835,
+        "train_candles": 4084,
+        "test_candles": 1751,
+        "train_start_utc": "2026-08-01 00:00:00+00:00",
+        "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+        "test_start_utc": "2026-09-12 13:00:00+00:00",
+        "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+        "feature_columns": [
+          "price_velocity",
+          "price_velocity_1h",
+          "volume_surge_ratio",
+          "trades_surge_ratio",
+          "volatility_parkinson",
+          "bar_range_bps",
+          "taker_buy_ratio",
+          "quote_net_flow_ratio"
+        ]
+      },
+      "calibration": {
+        "threshold_offset": -0.634052,
+        "score_min": -0.109878,
+        "score_max": 0.269601
+      },
+      "evaluation": {
+        "total_test_samples": 1751,
+        "outliers_flagged": 22,
+        "alert_rate_pct": 1.256,
+        "target_contamination_pct": 2.0,
+        "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+        "score_distribution": {
+          "mean_score": 0.1732,
+          "std_score": 0.123,
+          "median_score": 0.1418,
+          "p75_score": 0.1891,
+          "p95_score": 0.4119,
+          "p99_score": 0.6982,
+          "max_score": 1.0
+        },
+        "risk_level_counts": {
+          "ANOMALY_WARNING": 13,
+          "CRITICAL_ANOMALY": 9,
+          "ELEVATED": 53,
+          "NORMAL": 1676
+        },
+        "contrastive_feature_profile": {
+          "price_velocity": {
+            "normal_mean": -0.0027,
+            "anomaly_mean": 0.0758,
+            "surge_multiplier": -28.26
+          },
+          "price_velocity_1h": {
+            "normal_mean": -0.0134,
+            "anomaly_mean": 0.4761,
+            "surge_multiplier": -35.41
+          },
+          "volume_surge_ratio": {
+            "normal_mean": 0.995,
+            "anomaly_mean": 8.1256,
+            "surge_multiplier": 8.17
+          },
+          "trades_surge_ratio": {
+            "normal_mean": 1.0065,
+            "anomaly_mean": 8.8972,
+            "surge_multiplier": 8.84
+          },
+          "volatility_parkinson": {
+            "normal_mean": 0.0014,
+            "anomaly_mean": 0.0136,
+            "surge_multiplier": 9.64
+          },
+          "bar_range_bps": {
+            "normal_mean": 23.4891,
+            "anomaly_mean": 226.1633,
+            "surge_multiplier": 9.63
+          },
+          "taker_buy_ratio": {
+            "normal_mean": 0.4847,
+            "anomaly_mean": 0.5466,
+            "surge_multiplier": 1.13
+          },
+          "quote_net_flow_ratio": {
+            "normal_mean": 0.0019,
+            "anomaly_mean": 0.0937,
+            "surge_multiplier": 48.59
+          }
+        },
+        "top_detected_anomalies": [
+          {
+            "timestamp_utc": "2026-09-16 13:44:59.999000+00:00",
+            "close_price": 566.32,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 385.47,
+            "volume_surge_ratio": 8.63,
+            "trades_surge_ratio": 9.64,
+            "volatility_parkinson": 0.02324
+          },
+          {
+            "timestamp_utc": "2026-09-15 13:44:59.999000+00:00",
+            "close_price": 557.0,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 364.99,
+            "volume_surge_ratio": 5.29,
+            "trades_surge_ratio": 9.43,
+            "volatility_parkinson": 0.02215
+          },
+          {
+            "timestamp_utc": "2026-09-25 13:44:59.999000+00:00",
+            "close_price": 560.39,
+            "anomaly_score": 1.0,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 321.38,
+            "volume_surge_ratio": 6.24,
+            "trades_surge_ratio": 9.38,
+            "volatility_parkinson": 0.01962
+          },
+          {
+            "timestamp_utc": "2026-09-14 00:14:59.999000+00:00",
+            "close_price": 559.13,
+            "anomaly_score": 0.9728,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 210.86,
+            "volume_surge_ratio": 16.78,
+            "trades_surge_ratio": 14.01,
+            "volatility_parkinson": 0.01273
+          },
+          {
+            "timestamp_utc": "2026-09-21 13:44:59.999000+00:00",
+            "close_price": 578.92,
+            "anomaly_score": 0.9476,
+            "risk_level": "CRITICAL_ANOMALY",
+            "bar_range_bps": 407.48,
+            "volume_surge_ratio": 7.15,
+            "trades_surge_ratio": 11.31,
+            "volatility_parkinson": 0.02442
+          }
+        ],
+        "anomalies_detected": 22,
+        "anomaly_rate_pct": 1.256
+      },
+      "feature_parity_verification": {
+        "passed": true,
+        "max_difference": 0.0,
+        "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+      },
+      "empirical_latency_benchmark": {
+        "warmup_iterations": 100,
+        "benchmark_iterations": 1000,
+        "mean_latency_ms": 23.988,
+        "p50_latency_ms": 22.109,
+        "p90_latency_ms": 30.978,
+        "p95_latency_ms": 37.554,
+        "p99_latency_ms": 52.264,
+        "max_latency_ms": 76.999,
+        "throughput_fps": 41.7
+      },
+      "raw_db_candle_inference_test": {
+        "symbol": "DELLBUSDT",
+        "timestamp": 1790793,
+        "close_price": 544.4500122070312,
+        "is_anomaly": false,
+        "anomaly_score": 0.0661,
+        "risk_level": "NORMAL (DATA_DEGRADED)",
+        "data_quality": {
+          "status": "DEGRADED",
+          "confidence": "LOW_CONFIDENCE",
+          "total_bars_provided": 25,
+          "rolling_window_required": 20,
+          "missing_fields": [
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume"
+          ],
+          "imputed_features": [
+            "taker_buy_ratio",
+            "quote_net_flow_ratio"
+          ],
+          "action": "FLAG_DEGRADED_TELEMETRY"
+        },
+        "microstructure_features": {
+          "price_velocity": 0.0,
+          "price_velocity_1h": 0.3724,
+          "volume_surge_ratio": 0.1168,
+          "trades_surge_ratio": 0.1606,
+          "volatility_parkinson": 0.0008,
+          "bar_range_bps": 13.9592,
+          "taker_buy_ratio": 0.5,
+          "quote_net_flow_ratio": 0.0
+        }
+      },
+      "train_time_sec": 0.34
+    }
+  ]
+}

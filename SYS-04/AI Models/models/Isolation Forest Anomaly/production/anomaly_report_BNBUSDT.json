@@ -1,0 +1,204 @@
+{
+  "symbol": "BNBUSDT",
+  "trained_at": "2026-10-02 16:16:33 UTC",
+  "hyperparameters": {
+    "contamination": 0.02,
+    "n_estimators": 100,
+    "max_samples": 256,
+    "random_state": 42,
+    "train_ratio": 0.7
+  },
+  "dataset_splits": {
+    "symbol": "BNBUSDT",
+    "total_candles": 5835,
+    "train_candles": 4084,
+    "test_candles": 1751,
+    "train_start_utc": "2026-08-01 00:00:00+00:00",
+    "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+    "test_start_utc": "2026-09-12 13:00:00+00:00",
+    "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+    "feature_columns": [
+      "price_velocity",
+      "price_velocity_1h",
+      "volume_surge_ratio",
+      "trades_surge_ratio",
+      "volatility_parkinson",
+      "bar_range_bps",
+      "taker_buy_ratio",
+      "quote_net_flow_ratio"
+    ]
+  },
+  "calibration": {
+    "threshold_offset": -0.611068,
+    "score_min": -0.100242,
+    "score_max": 0.254044
+  },
+  "evaluation": {
+    "total_test_samples": 1751,
+    "outliers_flagged": 31,
+    "alert_rate_pct": 1.77,
+    "target_contamination_pct": 2.0,
+    "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+    "score_distribution": {
+      "mean_score": 0.2099,
+      "std_score": 0.148,
+      "median_score": 0.1641,
+      "p75_score": 0.2611,
+      "p95_score": 0.4944,
+      "p99_score": 0.7715,
+      "max_score": 1.0
+    },
+    "risk_level_counts": {
+      "ANOMALY_WARNING": 19,
+      "CRITICAL_ANOMALY": 12,
+      "ELEVATED": 97,
+      "NORMAL": 1623
+    },
+    "contrastive_feature_profile": {
+      "price_velocity": {
+        "normal_mean": 0.0028,
+        "anomaly_mean": -0.0128,
+        "surge_multiplier": -4.5
+      },
+      "price_velocity_1h": {
+        "normal_mean": 0.0108,
+        "anomaly_mean": -0.0031,
+        "surge_multiplier": -0.29
+      },
+      "volume_surge_ratio": {
+        "normal_mean": 0.9787,
+        "anomaly_mean": 4.0178,
+        "surge_multiplier": 4.11
+      },
+      "trades_surge_ratio": {
+        "normal_mean": 0.988,
+        "anomaly_mean": 2.8614,
+        "surge_multiplier": 2.9
+      },
+      "volatility_parkinson": {
+        "normal_mean": 0.0017,
+        "anomaly_mean": 0.0066,
+        "surge_multiplier": 3.96
+      },
+      "bar_range_bps": {
+        "normal_mean": 27.7621,
+        "anomaly_mean": 109.8864,
+        "surge_multiplier": 3.96
+      },
+      "taker_buy_ratio": {
+        "normal_mean": 0.4972,
+        "anomaly_mean": 0.4927,
+        "surge_multiplier": 0.99
+      },
+      "quote_net_flow_ratio": {
+        "normal_mean": -0.0056,
+        "anomaly_mean": -0.0145,
+        "surge_multiplier": 2.57
+      }
+    },
+    "top_detected_anomalies": [
+      {
+        "timestamp_utc": "2026-09-22 01:44:59.999000+00:00",
+        "close_price": 788.37,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 169.21,
+        "volume_surge_ratio": 6.62,
+        "trades_surge_ratio": 2.39,
+        "volatility_parkinson": 0.01015
+      },
+      {
+        "timestamp_utc": "2026-09-20 02:59:59.999000+00:00",
+        "close_price": 747.83,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 129.71,
+        "volume_surge_ratio": 5.9,
+        "trades_surge_ratio": 4.28,
+        "volatility_parkinson": 0.00776
+      },
+      {
+        "timestamp_utc": "2026-09-23 14:14:59.999000+00:00",
+        "close_price": 769.63,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 247.78,
+        "volume_surge_ratio": 6.37,
+        "trades_surge_ratio": 4.1,
+        "volatility_parkinson": 0.01482
+      },
+      {
+        "timestamp_utc": "2026-09-23 14:29:59.999000+00:00",
+        "close_price": 760.19,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 137.07,
+        "volume_surge_ratio": 4.63,
+        "trades_surge_ratio": 4.51,
+        "volatility_parkinson": 0.00818
+      },
+      {
+        "timestamp_utc": "2026-09-25 11:29:59.999000+00:00",
+        "close_price": 779.76,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 97.21,
+        "volume_surge_ratio": 5.43,
+        "trades_surge_ratio": 2.91,
+        "volatility_parkinson": 0.00583
+      }
+    ],
+    "anomalies_detected": 31,
+    "anomaly_rate_pct": 1.77
+  },
+  "feature_parity_verification": {
+    "passed": true,
+    "max_difference": 0.0,
+    "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+  },
+  "empirical_latency_benchmark": {
+    "warmup_iterations": 100,
+    "benchmark_iterations": 1000,
+    "mean_latency_ms": 24.435,
+    "p50_latency_ms": 21.793,
+    "p90_latency_ms": 33.663,
+    "p95_latency_ms": 41.606,
+    "p99_latency_ms": 59.119,
+    "max_latency_ms": 88.587,
+    "throughput_fps": 40.9
+  },
+  "raw_db_candle_inference_test": {
+    "symbol": "BNBUSDT",
+    "timestamp": 1790793,
+    "close_price": 767.1599731445312,
+    "is_anomaly": false,
+    "anomaly_score": 0.1553,
+    "risk_level": "NORMAL (DATA_DEGRADED)",
+    "data_quality": {
+      "status": "DEGRADED",
+      "confidence": "LOW_CONFIDENCE",
+      "total_bars_provided": 25,
+      "rolling_window_required": 20,
+      "missing_fields": [
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume"
+      ],
+      "imputed_features": [
+        "taker_buy_ratio",
+        "quote_net_flow_ratio"
+      ],
+      "action": "FLAG_DEGRADED_TELEMETRY"
+    },
+    "microstructure_features": {
+      "price_velocity": -0.1926,
+      "price_velocity_1h": -0.1835,
+      "volume_surge_ratio": 0.3937,
+      "trades_surge_ratio": 0.4436,
+      "volatility_parkinson": 0.0019,
+      "bar_range_bps": 31.2845,
+      "taker_buy_ratio": 0.5,
+      "quote_net_flow_ratio": 0.0
+    }
+  },
+  "train_time_sec": 0.33
+}

@@ -1,0 +1,26 @@
+{
+  "model": "LGBM-FRAUD-02",
+  "feature_schema_version": "fraud-ieee-v1",
+  "feature_count": 35,
+  "training_rows": 472432,
+  "validation_rows": 118108,
+  "training_fraud_rate": 0.03513521522674162,
+  "validation_fraud_rate": 0.034409184813899145,
+  "best_iteration": 354,
+  "roc_auc": 0.9181,
+  "pr_auc": 0.5483,
+  "latency_benchmark": {
+    "warmup_iterations": 100,
+    "benchmark_iterations": 1000,
+    "device": "cpu",
+    "mean_latency_ms": 1.883,
+    "p50_latency_ms": 1.758,
+    "p95_latency_ms": 3.047,
+    "p99_latency_ms": 4.264,
+    "max_latency_ms": 12.86,
+    "throughput_fps": 531.0
+  },
+  "training_seconds": 29.841,
+  "split": "chronological TransactionDT 80/20 holdout",
+  "promotion": "candidate_only_until_real_transaction_labels_are_available"
+}

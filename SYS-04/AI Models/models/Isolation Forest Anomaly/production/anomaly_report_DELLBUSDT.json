@@ -1,0 +1,204 @@
+{
+  "symbol": "DELLBUSDT",
+  "trained_at": "2026-10-02 16:17:53 UTC",
+  "hyperparameters": {
+    "contamination": 0.02,
+    "n_estimators": 100,
+    "max_samples": 256,
+    "random_state": 42,
+    "train_ratio": 0.7
+  },
+  "dataset_splits": {
+    "symbol": "DELLBUSDT",
+    "total_candles": 5835,
+    "train_candles": 4084,
+    "test_candles": 1751,
+    "train_start_utc": "2026-08-01 00:00:00+00:00",
+    "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+    "test_start_utc": "2026-09-12 13:00:00+00:00",
+    "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+    "feature_columns": [
+      "price_velocity",
+      "price_velocity_1h",
+      "volume_surge_ratio",
+      "trades_surge_ratio",
+      "volatility_parkinson",
+      "bar_range_bps",
+      "taker_buy_ratio",
+      "quote_net_flow_ratio"
+    ]
+  },
+  "calibration": {
+    "threshold_offset": -0.634052,
+    "score_min": -0.109878,
+    "score_max": 0.269601
+  },
+  "evaluation": {
+    "total_test_samples": 1751,
+    "outliers_flagged": 22,
+    "alert_rate_pct": 1.256,
+    "target_contamination_pct": 2.0,
+    "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+    "score_distribution": {
+      "mean_score": 0.1732,
+      "std_score": 0.123,
+      "median_score": 0.1418,
+      "p75_score": 0.1891,
+      "p95_score": 0.4119,
+      "p99_score": 0.6982,
+      "max_score": 1.0
+    },
+    "risk_level_counts": {
+      "ANOMALY_WARNING": 13,
+      "CRITICAL_ANOMALY": 9,
+      "ELEVATED": 53,
+      "NORMAL": 1676
+    },
+    "contrastive_feature_profile": {
+      "price_velocity": {
+        "normal_mean": -0.0027,
+        "anomaly_mean": 0.0758,
+        "surge_multiplier": -28.26
+      },
+      "price_velocity_1h": {
+        "normal_mean": -0.0134,
+        "anomaly_mean": 0.4761,
+        "surge_multiplier": -35.41
+      },
+      "volume_surge_ratio": {
+        "normal_mean": 0.995,
+        "anomaly_mean": 8.1256,
+        "surge_multiplier": 8.17
+      },
+      "trades_surge_ratio": {
+        "normal_mean": 1.0065,
+        "anomaly_mean": 8.8972,
+        "surge_multiplier": 8.84
+      },
+      "volatility_parkinson": {
+        "normal_mean": 0.0014,
+        "anomaly_mean": 0.0136,
+        "surge_multiplier": 9.64
+      },
+      "bar_range_bps": {
+        "normal_mean": 23.4891,
+        "anomaly_mean": 226.1633,
+        "surge_multiplier": 9.63
+      },
+      "taker_buy_ratio": {
+        "normal_mean": 0.4847,
+        "anomaly_mean": 0.5466,
+        "surge_multiplier": 1.13
+      },
+      "quote_net_flow_ratio": {
+        "normal_mean": 0.0019,
+        "anomaly_mean": 0.0937,
+        "surge_multiplier": 48.59
+      }
+    },
+    "top_detected_anomalies": [
+      {
+        "timestamp_utc": "2026-09-16 13:44:59.999000+00:00",
+        "close_price": 566.32,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 385.47,
+        "volume_surge_ratio": 8.63,
+        "trades_surge_ratio": 9.64,
+        "volatility_parkinson": 0.02324
+      },
+      {
+        "timestamp_utc": "2026-09-15 13:44:59.999000+00:00",
+        "close_price": 557.0,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 364.99,
+        "volume_surge_ratio": 5.29,
+        "trades_surge_ratio": 9.43,
+        "volatility_parkinson": 0.02215
+      },
+      {
+        "timestamp_utc": "2026-09-25 13:44:59.999000+00:00",
+        "close_price": 560.39,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 321.38,
+        "volume_surge_ratio": 6.24,
+        "trades_surge_ratio": 9.38,
+        "volatility_parkinson": 0.01962
+      },
+      {
+        "timestamp_utc": "2026-09-14 00:14:59.999000+00:00",
+        "close_price": 559.13,
+        "anomaly_score": 0.9728,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 210.86,
+        "volume_surge_ratio": 16.78,
+        "trades_surge_ratio": 14.01,
+        "volatility_parkinson": 0.01273
+      },
+      {
+        "timestamp_utc": "2026-09-21 13:44:59.999000+00:00",
+        "close_price": 578.92,
+        "anomaly_score": 0.9476,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 407.48,
+        "volume_surge_ratio": 7.15,
+        "trades_surge_ratio": 11.31,
+        "volatility_parkinson": 0.02442
+      }
+    ],
+    "anomalies_detected": 22,
+    "anomaly_rate_pct": 1.256
+  },
+  "feature_parity_verification": {
+    "passed": true,
+    "max_difference": 0.0,
+    "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+  },
+  "empirical_latency_benchmark": {
+    "warmup_iterations": 100,
+    "benchmark_iterations": 1000,
+    "mean_latency_ms": 23.988,
+    "p50_latency_ms": 22.109,
+    "p90_latency_ms": 30.978,
+    "p95_latency_ms": 37.554,
+    "p99_latency_ms": 52.264,
+    "max_latency_ms": 76.999,
+    "throughput_fps": 41.7
+  },
+  "raw_db_candle_inference_test": {
+    "symbol": "DELLBUSDT",
+    "timestamp": 1790793,
+    "close_price": 544.4500122070312,
+    "is_anomaly": false,
+    "anomaly_score": 0.0661,
+    "risk_level": "NORMAL (DATA_DEGRADED)",
+    "data_quality": {
+      "status": "DEGRADED",
+      "confidence": "LOW_CONFIDENCE",
+      "total_bars_provided": 25,
+      "rolling_window_required": 20,
+      "missing_fields": [
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume"
+      ],
+      "imputed_features": [
+        "taker_buy_ratio",
+        "quote_net_flow_ratio"
+      ],
+      "action": "FLAG_DEGRADED_TELEMETRY"
+    },
+    "microstructure_features": {
+      "price_velocity": 0.0,
+      "price_velocity_1h": 0.3724,
+      "volume_surge_ratio": 0.1168,
+      "trades_surge_ratio": 0.1606,
+      "volatility_parkinson": 0.0008,
+      "bar_range_bps": 13.9592,
+      "taker_buy_ratio": 0.5,
+      "quote_net_flow_ratio": 0.0
+    }
+  },
+  "train_time_sec": 0.34
+}

@@ -1,0 +1,36 @@
+# Datasets and large training files (> 50MB)
+AI Models/Dataset/
+**/Dataset/
+*.csv
+*.parquet
+*.h5
+*.zip
+*.tar.gz
+*.7z
+
+# Python and virtual environments
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime outputs
+logs/
+*.log
+output/
+outputs/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

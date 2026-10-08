@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  sys04-ai-models:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nhfinance_sys04_ai_models:latest
+    container_name: nhfinance_sys04_ai_models
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Host bind mount: Models on host are directly mounted to /app/models & /app/AI Models/models
+      # This guarantees that models are persisted on host disk and NEVER lost when quitting Docker!
+      - ./AI Models/models:/app/models:rw
+      - ./AI Models/models:/app/AI Models/models:rw
+      - ./AI Models/Dataset:/app/Dataset:rw
+      - ./AI Models/Dataset:/app/AI Models/Dataset:rw
+      - ./AI Models/src:/app/AI Models/src:ro
+      - ./server.py:/app/server.py:ro
+      - ./entrypoint.py:/app/entrypoint.py:ro
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - MODELS_DIR=/app/models
+      - BACKUP_DIR=/app/models_backup
+      - CLICKHOUSE_HOST=clickhouse_server
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=nhfinanceadmin
+      - CLICKHOUSE_PASSWORD=nhathuy123
+      - CLICKHOUSE_DB=default
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sys-02_default
+      - sys-05_default
+      - thesis-network
+
+networks:
+  sys-02_default:
+    external: true
+  sys-05_default:
+    external: true
+  thesis-network:
+    external: true

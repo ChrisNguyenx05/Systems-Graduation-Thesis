@@ -1,0 +1,204 @@
+{
+  "symbol": "BTCUSDT",
+  "trained_at": "2026-10-02 16:15:38 UTC",
+  "hyperparameters": {
+    "contamination": 0.02,
+    "n_estimators": 100,
+    "max_samples": 256,
+    "random_state": 42,
+    "train_ratio": 0.7
+  },
+  "dataset_splits": {
+    "symbol": "BTCUSDT",
+    "total_candles": 5835,
+    "train_candles": 4084,
+    "test_candles": 1751,
+    "train_start_utc": "2026-08-01 00:00:00+00:00",
+    "train_end_utc": "2026-09-12 12:59:59.999000+00:00",
+    "test_start_utc": "2026-09-12 13:00:00+00:00",
+    "test_end_utc": "2026-09-30 18:44:59.999000+00:00",
+    "feature_columns": [
+      "price_velocity",
+      "price_velocity_1h",
+      "volume_surge_ratio",
+      "trades_surge_ratio",
+      "volatility_parkinson",
+      "bar_range_bps",
+      "taker_buy_ratio",
+      "quote_net_flow_ratio"
+    ]
+  },
+  "calibration": {
+    "threshold_offset": -0.606562,
+    "score_min": -0.094094,
+    "score_max": 0.248056
+  },
+  "evaluation": {
+    "total_test_samples": 1751,
+    "outliers_flagged": 35,
+    "alert_rate_pct": 1.999,
+    "target_contamination_pct": 2.0,
+    "methodology_note": "Alert Rate is governed by the unsupervised contamination prior (nu=0.02) establishing a calibrated threshold for outlier flagging, NOT a supervised detection rate of verified fraudulent transactions.",
+    "score_distribution": {
+      "mean_score": 0.2044,
+      "std_score": 0.1487,
+      "median_score": 0.1579,
+      "p75_score": 0.2401,
+      "p95_score": 0.4933,
+      "p99_score": 0.8347,
+      "max_score": 1.0
+    },
+    "risk_level_counts": {
+      "ANOMALY_WARNING": 18,
+      "CRITICAL_ANOMALY": 17,
+      "ELEVATED": 82,
+      "NORMAL": 1634
+    },
+    "contrastive_feature_profile": {
+      "price_velocity": {
+        "normal_mean": 0.0046,
+        "anomaly_mean": 0.012,
+        "surge_multiplier": 2.59
+      },
+      "price_velocity_1h": {
+        "normal_mean": 0.0133,
+        "anomaly_mean": 0.3219,
+        "surge_multiplier": 24.14
+      },
+      "volume_surge_ratio": {
+        "normal_mean": 0.9818,
+        "anomaly_mean": 4.0441,
+        "surge_multiplier": 4.12
+      },
+      "trades_surge_ratio": {
+        "normal_mean": 0.9977,
+        "anomaly_mean": 3.2824,
+        "surge_multiplier": 3.29
+      },
+      "volatility_parkinson": {
+        "normal_mean": 0.0014,
+        "anomaly_mean": 0.0063,
+        "surge_multiplier": 4.52
+      },
+      "bar_range_bps": {
+        "normal_mean": 23.0517,
+        "anomaly_mean": 104.1816,
+        "surge_multiplier": 4.52
+      },
+      "taker_buy_ratio": {
+        "normal_mean": 0.4909,
+        "anomaly_mean": 0.4908,
+        "surge_multiplier": 1.0
+      },
+      "quote_net_flow_ratio": {
+        "normal_mean": -0.0183,
+        "anomaly_mean": -0.0183,
+        "surge_multiplier": 1.0
+      }
+    },
+    "top_detected_anomalies": [
+      {
+        "timestamp_utc": "2026-09-15 13:44:59.999000+00:00",
+        "close_price": 76422.56,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 108.42,
+        "volume_surge_ratio": 6.29,
+        "trades_surge_ratio": 5.56,
+        "volatility_parkinson": 0.0065
+      },
+      {
+        "timestamp_utc": "2026-09-16 18:14:59.999000+00:00",
+        "close_price": 75798.01,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 166.54,
+        "volume_surge_ratio": 6.77,
+        "trades_surge_ratio": 5.01,
+        "volatility_parkinson": 0.00998
+      },
+      {
+        "timestamp_utc": "2026-09-21 08:44:59.999000+00:00",
+        "close_price": 83531.23,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 237.77,
+        "volume_surge_ratio": 10.48,
+        "trades_surge_ratio": 5.92,
+        "volatility_parkinson": 0.01434
+      },
+      {
+        "timestamp_utc": "2026-09-15 18:44:59.999000+00:00",
+        "close_price": 75773.02,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 164.99,
+        "volume_surge_ratio": 2.78,
+        "trades_surge_ratio": 3.06,
+        "volatility_parkinson": 0.00984
+      },
+      {
+        "timestamp_utc": "2026-09-15 18:59:59.999000+00:00",
+        "close_price": 76000.0,
+        "anomaly_score": 1.0,
+        "risk_level": "CRITICAL_ANOMALY",
+        "bar_range_bps": 162.79,
+        "volume_surge_ratio": 4.18,
+        "trades_surge_ratio": 3.58,
+        "volatility_parkinson": 0.00983
+      }
+    ],
+    "anomalies_detected": 35,
+    "anomaly_rate_pct": 1.999
+  },
+  "feature_parity_verification": {
+    "passed": true,
+    "max_difference": 0.0,
+    "test_timestamp_utc": "2026-09-30 18:44:59.999000+00:00"
+  },
+  "empirical_latency_benchmark": {
+    "warmup_iterations": 100,
+    "benchmark_iterations": 1000,
+    "mean_latency_ms": 26.687,
+    "p50_latency_ms": 24.486,
+    "p90_latency_ms": 35.677,
+    "p95_latency_ms": 42.614,
+    "p99_latency_ms": 58.526,
+    "max_latency_ms": 81.08,
+    "throughput_fps": 37.5
+  },
+  "raw_db_candle_inference_test": {
+    "symbol": "BTCUSDT",
+    "timestamp": 1790793,
+    "close_price": 83854.4609375,
+    "is_anomaly": false,
+    "anomaly_score": 0.1104,
+    "risk_level": "NORMAL (DATA_DEGRADED)",
+    "data_quality": {
+      "status": "DEGRADED",
+      "confidence": "LOW_CONFIDENCE",
+      "total_bars_provided": 25,
+      "rolling_window_required": 20,
+      "missing_fields": [
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume"
+      ],
+      "imputed_features": [
+        "taker_buy_ratio",
+        "quote_net_flow_ratio"
+      ],
+      "action": "FLAG_DEGRADED_TELEMETRY"
+    },
+    "microstructure_features": {
+      "price_velocity": -0.0779,
+      "price_velocity_1h": -0.1828,
+      "volume_surge_ratio": 0.424,
+      "trades_surge_ratio": 0.3863,
+      "volatility_parkinson": 0.001,
+      "bar_range_bps": 16.0434,
+      "taker_buy_ratio": 0.5,
+      "quote_net_flow_ratio": 0.0
+    }
+  },
+  "train_time_sec": 0.5
+}

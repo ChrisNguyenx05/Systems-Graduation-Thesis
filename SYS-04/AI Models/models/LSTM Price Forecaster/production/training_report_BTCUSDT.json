@@ -1,0 +1,120 @@
+{
+  "symbol": "BTCUSDT",
+  "trained_at": "2026-10-02 16:14:32 UTC",
+  "hyperparameters": {
+    "seq_len": 60,
+    "hidden_size_1": 64,
+    "hidden_size_2": 32,
+    "dense_hidden": 16,
+    "dropout": 0.2,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 64,
+    "max_epochs": 25,
+    "total_params": 31827
+  },
+  "dataset_splits": {
+    "total_candles": 8811,
+    "train_candles": 6167,
+    "val_candles": 1322,
+    "test_candles": 1322,
+    "train_windows": 6104,
+    "val_windows": 1259,
+    "test_windows": 1259,
+    "start_time": "2026-07-01 00:00:00+00:00",
+    "end_time": "2026-09-30 18:30:00+00:00",
+    "val_start_time": "2026-09-03 05:45:00+00:00",
+    "test_start_time": "2026-09-17 00:15:00+00:00"
+  },
+  "best_val_loss": 3e-06,
+  "total_train_time_sec": 78.96,
+  "test_metrics": {
+    "model_metrics": {
+      "rmse_15m_usd": 161.02,
+      "rmse_60m_usd": 335.37,
+      "mae_15m_usd": 107.85,
+      "mae_60m_usd": 215.53,
+      "mape_15m_pct": 0.129,
+      "mape_60m_pct": 0.259,
+      "directional_accuracy_15m_pct": 51.71,
+      "directional_accuracy_60m_pct": 48.85
+    },
+    "naive_baseline_metrics": {
+      "rmse_15m_usd": 161.11,
+      "rmse_60m_usd": 334.13,
+      "mae_15m_usd": 107.86,
+      "mae_60m_usd": 214.72,
+      "mape_15m_pct": 0.129,
+      "mape_60m_pct": 0.258,
+      "directional_accuracy_15m_pct": 0.0,
+      "directional_accuracy_60m_pct": 0.0,
+      "description": "Na\u00efve Persistence Baseline predicting y_hat = P_current"
+    },
+    "acceptance_comparison": {
+      "mae_15m_improvement_pct": 0.01,
+      "mae_60m_improvement_pct": -0.38,
+      "model_vs_naive_rmse_60m_ratio": 1.004,
+      "model_vs_naive_mae_60m_ratio": 1.004,
+      "directional_accuracy_advantage_60m": -1.15,
+      "passed_error_gate": true,
+      "passed_directional_gate": false,
+      "passed_promotion_gate": false,
+      "gate_verdict": "FAILED_PERSISTENCE_BENCHMARK"
+    },
+    "latency_benchmark": {
+      "warmup_iterations": 100,
+      "benchmark_iterations": 1000,
+      "device": "cpu",
+      "mean_latency_ms": 1.474,
+      "std_latency_ms": 1.287,
+      "p50_latency_ms": 1.203,
+      "p90_latency_ms": 2.046,
+      "p95_latency_ms": 2.635,
+      "p99_latency_ms": 5.9,
+      "max_latency_ms": 23.696,
+      "throughput_fps": 678.2
+    }
+  },
+  "sample_predictions": [
+    {
+      "sample_idx": 0,
+      "current_price": 76350.26,
+      "actual_15m": 76464.01,
+      "predicted_15m": 76357.69,
+      "actual_60m": 76731.47,
+      "predicted_60m": 76337.12
+    },
+    {
+      "sample_idx": 1,
+      "current_price": 76464.01,
+      "actual_15m": 76766.28,
+      "predicted_15m": 76471.45,
+      "actual_60m": 76710.79,
+      "predicted_60m": 76450.85
+    },
+    {
+      "sample_idx": 2,
+      "current_price": 76766.28,
+      "actual_15m": 76780.01,
+      "predicted_15m": 76773.75,
+      "actual_60m": 76706.01,
+      "predicted_60m": 76753.08
+    },
+    {
+      "sample_idx": 3,
+      "current_price": 76780.01,
+      "actual_15m": 76731.47,
+      "predicted_15m": 76787.48,
+      "actual_60m": 76753.46,
+      "predicted_60m": 76766.8
+    },
+    {
+      "sample_idx": 4,
+      "current_price": 76731.47,
+      "actual_15m": 76710.79,
+      "predicted_15m": 76738.93,
+      "actual_60m": 76820.01,
+      "predicted_60m": 76718.27
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+AI Models/Dataset
+Dataset
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.github
+*.png
+*.jpg
+*.jpeg
+*.html
+docs
+plans
+.pytest_cache

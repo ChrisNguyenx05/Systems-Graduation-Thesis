@@ -1,0 +1,120 @@
+{
+  "symbol": "ETHUSDT",
+  "trained_at": "2026-10-02 16:19:34 UTC",
+  "hyperparameters": {
+    "seq_len": 60,
+    "hidden_size_1": 64,
+    "hidden_size_2": 32,
+    "dense_hidden": 16,
+    "dropout": 0.2,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 64,
+    "max_epochs": 25,
+    "total_params": 31827
+  },
+  "dataset_splits": {
+    "total_candles": 8811,
+    "train_candles": 6167,
+    "val_candles": 1322,
+    "test_candles": 1322,
+    "train_windows": 6104,
+    "val_windows": 1259,
+    "test_windows": 1259,
+    "start_time": "2026-07-01 00:00:00+00:00",
+    "end_time": "2026-09-30 18:30:00+00:00",
+    "val_start_time": "2026-09-03 05:45:00+00:00",
+    "test_start_time": "2026-09-17 00:15:00+00:00"
+  },
+  "best_val_loss": 5e-06,
+  "total_train_time_sec": 76.95,
+  "test_metrics": {
+    "model_metrics": {
+      "rmse_15m_usd": 6.45,
+      "rmse_60m_usd": 12.23,
+      "mae_15m_usd": 4.45,
+      "mae_60m_usd": 8.53,
+      "mape_15m_pct": 0.166,
+      "mape_60m_pct": 0.32,
+      "directional_accuracy_15m_pct": 51.15,
+      "directional_accuracy_60m_pct": 48.77
+    },
+    "naive_baseline_metrics": {
+      "rmse_15m_usd": 6.45,
+      "rmse_60m_usd": 12.23,
+      "mae_15m_usd": 4.45,
+      "mae_60m_usd": 8.53,
+      "mape_15m_pct": 0.166,
+      "mape_60m_pct": 0.32,
+      "directional_accuracy_15m_pct": 0.0,
+      "directional_accuracy_60m_pct": 0.0,
+      "description": "Na\u00efve Persistence Baseline predicting y_hat = P_current"
+    },
+    "acceptance_comparison": {
+      "mae_15m_improvement_pct": 0.02,
+      "mae_60m_improvement_pct": -0.0,
+      "model_vs_naive_rmse_60m_ratio": 1.0,
+      "model_vs_naive_mae_60m_ratio": 1.0,
+      "directional_accuracy_advantage_60m": -1.23,
+      "passed_error_gate": true,
+      "passed_directional_gate": false,
+      "passed_promotion_gate": false,
+      "gate_verdict": "FAILED_PERSISTENCE_BENCHMARK"
+    },
+    "latency_benchmark": {
+      "warmup_iterations": 100,
+      "benchmark_iterations": 1000,
+      "device": "cpu",
+      "mean_latency_ms": 1.625,
+      "std_latency_ms": 1.601,
+      "p50_latency_ms": 1.279,
+      "p90_latency_ms": 2.496,
+      "p95_latency_ms": 3.198,
+      "p99_latency_ms": 7.54,
+      "max_latency_ms": 24.22,
+      "throughput_fps": 615.4
+    }
+  },
+  "sample_predictions": [
+    {
+      "sample_idx": 0,
+      "current_price": 2451.86,
+      "actual_15m": 2456.0,
+      "predicted_15m": 2452.05,
+      "actual_60m": 2470.21,
+      "predicted_60m": 2451.85
+    },
+    {
+      "sample_idx": 1,
+      "current_price": 2456.0,
+      "actual_15m": 2471.91,
+      "predicted_15m": 2456.19,
+      "actual_60m": 2469.18,
+      "predicted_60m": 2455.99
+    },
+    {
+      "sample_idx": 2,
+      "current_price": 2471.91,
+      "actual_15m": 2470.27,
+      "predicted_15m": 2472.1,
+      "actual_60m": 2464.96,
+      "predicted_60m": 2471.9
+    },
+    {
+      "sample_idx": 3,
+      "current_price": 2470.27,
+      "actual_15m": 2470.21,
+      "predicted_15m": 2470.46,
+      "actual_60m": 2470.65,
+      "predicted_60m": 2470.26
+    },
+    {
+      "sample_idx": 4,
+      "current_price": 2470.21,
+      "actual_15m": 2469.18,
+      "predicted_15m": 2470.4,
+      "actual_60m": 2469.46,
+      "predicted_60m": 2470.2
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "SYS-04 Market and Fraud Data Layers",
+    "quality_profile": "showcase",
+    "viewBox": [1068, 620]
+  },
+  "stages": [
+    { "label": "Sources" },
+    { "label": "Bronze" },
+    { "label": "Silver" },
+    { "label": "Gold" },
+    { "label": "Models and Consumers" }
+  ],
+  "nodes": [
+    { "id": "market_api", "type": "external", "label": "Market API", "sublabel": "market bars", "tag": "public", "stage": 0, "row": 0 },
+    { "id": "transaction_api", "type": "backend", "label": "Transaction API", "sublabel": "payment events", "tag": "authenticated", "stage": 0, "row": 2 },
+    { "id": "label_api", "type": "backend", "label": "Label API", "sublabel": "admin review or outcome", "tag": "confirmed label", "stage": 0, "row": 3 },
+    { "id": "bronze_market", "type": "database", "label": "Bronze Market", "sublabel": "immutable API payloads", "tag": "append-only", "stage": 1, "row": 0 },
+    { "id": "bronze_transactions", "type": "database", "label": "Bronze Transactions", "sublabel": "raw transaction events", "tag": "transaction_id", "stage": 1, "row": 2 },
+    { "id": "silver", "type": "backend", "label": "Silver Layer", "sublabel": "UTC, hashes, dedupe", "tag": "validated", "stage": 2, "row": 2 },
+    { "id": "gold_market", "type": "database", "label": "Gold Market 15m", "sublabel": "closed OHLCV bars", "tag": "symbol + bar_time", "stage": 3, "row": 0 },
+    { "id": "gold_risk", "type": "database", "label": "Gold Risk Features", "sublabel": "frozen features", "tag": "transaction_id", "stage": 3, "row": 2 },
+    { "id": "fraud_labels", "type": "database", "label": "Fraud Labels", "sublabel": "confirmed is_fraud", "tag": "label_confirmed_at", "stage": 3, "row": 3 },
+    { "id": "market_models", "type": "backend", "label": "LSTM + IForest", "sublabel": "15m model service", "tag": "SYS-04", "stage": 4, "row": 0 },
+    { "id": "fraud_model", "type": "backend", "label": "LightGBM Fraud", "sublabel": "labelled snapshots", "tag": "SYS-04", "stage": 4, "row": 3 }
+  ],
+  "flows": [
+    { "id": "market_ingest", "from": "market_api", "to": "bronze_market", "label": "market API payloads", "classification": "raw", "variant": "emphasis" },
+    { "id": "transaction_ingest", "from": "transaction_api", "to": "bronze_transactions", "label": "transaction events", "classification": "raw", "variant": "emphasis" },
+    { "id": "market_normalize", "from": "bronze_market", "to": "silver", "label": "validate and deduplicate", "classification": "ETL", "variant": "default" },
+    { "id": "transaction_normalize", "from": "bronze_transactions", "to": "silver", "label": "hash identifiers", "classification": "PII minimized", "variant": "security", "route": "straight", "labelAt": [422, 440] },
+    { "id": "market_gold", "from": "silver", "to": "gold_market", "label": "aggregate closed 15m bars", "classification": "curated", "variant": "emphasis" },
+    { "id": "risk_gold", "from": "silver", "to": "gold_risk", "label": "velocity and behavior features", "classification": "curated", "variant": "emphasis", "route": "straight", "labelAt": [638, 440] },
+    { "id": "labels_store", "from": "label_api", "to": "fraud_labels", "label": "confirmed fraud outcome", "classification": "supervised label", "variant": "security" },
+    { "id": "market_training", "from": "gold_market", "to": "market_models", "label": "model context", "classification": "training and inference", "variant": "default", "route": "straight", "labelAt": [852, 112] },
+    { "id": "market_enrichment", "from": "market_models", "to": "gold_risk", "label": "optional market risk signal", "classification": "enrichment", "variant": "dashed" },
+    { "id": "fraud_training_features", "from": "gold_risk", "to": "fraud_model", "label": "feature snapshots", "classification": "model inputs", "variant": "default" },
+    { "id": "fraud_training_labels", "from": "fraud_labels", "to": "fraud_model", "label": "join by transaction_id", "classification": "labelled training only", "variant": "security", "route": "straight", "labelAt": [852, 570] }
+  ]
+}
