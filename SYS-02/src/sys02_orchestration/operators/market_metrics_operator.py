@@ -3,6 +3,7 @@ from __future__ import annotations
 import json, time
 from typing import Any, Dict, Iterable, List, Sequence
 import requests, websocket
+from sys02_orchestration.config import config, SYMBOL_TO_PAIR_ID
 from sys02_orchestration.operators.clickhouse_operator import ClickHouseTaskOperator
 from sys02_orchestration.operators.lakehouse_operator import LakehouseTaskOperator
 SPOT_BASE_URL = "https://api.binance.com"
@@ -26,13 +27,14 @@ class BinanceMarketMetricsOperator:
     def collect_spot(self, symbols: Iterable[str], collected_at: int) -> Dict[str, List[Dict[str, Any]]]:
         result = {"klines": [], "agg_trades": [], "order_book_depth": []}
         for symbol in symbols:
+            pid = SYMBOL_TO_PAIR_ID.get(symbol, 0)
             k = self._get("/api/v3/klines", {"symbol": symbol, "interval": "15m", "limit": 1})[-1]
-            result["klines"].append({"symbol": symbol, "open_time": int(k[0]), "open": float(k[1]), "high": float(k[2]), "low": float(k[3]), "close": float(k[4]), "volume": float(k[5]), "close_time": int(k[6]), "quote_asset_volume": float(k[7]), "number_of_trades": int(k[8]), "taker_buy_base_asset_volume": float(k[9]), "taker_buy_quote_asset_volume": float(k[10]), "collected_at": collected_at})
+            result["klines"].append({"pair_id": pid, "symbol": symbol, "open_time": int(k[0]), "open": float(k[1]), "high": float(k[2]), "low": float(k[3]), "close": float(k[4]), "volume": float(k[5]), "close_time": int(k[6]), "quote_asset_volume": float(k[7]), "number_of_trades": int(k[8]), "taker_buy_base_asset_volume": float(k[9]), "taker_buy_quote_asset_volume": float(k[10]), "collected_at": collected_at})
             trades = self._get("/api/v3/aggTrades", {"symbol": symbol, "startTime": self._window_start(collected_at), "endTime": collected_at, "limit": 1000})
-            result["agg_trades"].extend({"event_type": "aggTrade", "event_time": int(x["T"]), "symbol": symbol, "aggregate_trade_id": int(x["a"]), "price": float(x["p"]), "quantity": float(x["q"]), "first_trade_id": int(x["f"]), "last_trade_id": int(x["l"]), "trade_time": int(x["T"]), "buyer_is_market_maker": bool(x["m"]), "collected_at": collected_at} for x in trades)
+            result["agg_trades"].extend({"pair_id": pid, "event_type": "aggTrade", "event_time": int(x["T"]), "symbol": symbol, "aggregate_trade_id": int(x["a"]), "price": float(x["p"]), "quantity": float(x["q"]), "first_trade_id": int(x["f"]), "last_trade_id": int(x["l"]), "trade_time": int(x["T"]), "buyer_is_market_maker": bool(x["m"]), "collected_at": collected_at} for x in trades)
             book = self._get("/api/v3/depth", {"symbol": symbol, "limit": self.depth_limit}); bids, asks = book["bids"], book["asks"]
             bv, av = sum(float(x[1]) for x in bids), sum(float(x[1]) for x in asks)
-            result["order_book_depth"].append({"symbol": symbol, "last_update_id": int(book["lastUpdateId"]), "bids": bids, "asks": asks, "bid_volume": bv, "ask_volume": av, "order_book_imbalance": (bv-av)/(bv+av) if bv+av else 0.0, "observed_at": collected_at})
+            result["order_book_depth"].append({"pair_id": pid, "symbol": symbol, "last_update_id": int(book["lastUpdateId"]), "bids": bids, "asks": asks, "bid_volume": bv, "ask_volume": av, "order_book_imbalance": (bv-av)/(bv+av) if bv+av else 0.0, "observed_at": collected_at})
         return result
     def collect_liquidations(self, duration_seconds: int, collected_at: int) -> List[Dict[str, Any]]:
         url = FUTURES_WS_BASE_URL + "/".join(f"{s.lower()}@forceOrder" for s in self.symbols[:3]); events = []; deadline = time.monotonic() + max(1, duration_seconds)
@@ -43,7 +45,10 @@ class BinanceMarketMetricsOperator:
                 try: payload = json.loads(ws.recv()).get("data", {})
                 except websocket.WebSocketTimeoutException: continue
                 order = payload.get("o", {})
-                if order: events.append({"event_type": payload.get("e", "forceOrder"), "event_time": int(payload.get("E", collected_at)), "symbol": order["s"], "side": order["S"], "price": float(order["p"]), "quantity": float(order["q"]), "order_id": int(order.get("i", 0)), "order_type": order.get("o", ""), "time_in_force": order.get("f", ""), "order_status": order.get("X", ""), "average_price": float(order.get("ap", 0)), "filled_quantity": float(order.get("z", 0)), "order_time": int(order.get("T", collected_at)), "collected_at": collected_at})
+                if order:
+                    s = order["s"]
+                    pid = SYMBOL_TO_PAIR_ID.get(s, 0)
+                    events.append({"pair_id": pid, "event_type": payload.get("e", "forceOrder"), "event_time": int(payload.get("E", collected_at)), "symbol": s, "side": order["S"], "price": float(order["p"]), "quantity": float(order["q"]), "order_id": int(order.get("i", 0)), "order_type": order.get("o", ""), "time_in_force": order.get("f", ""), "order_status": order.get("X", ""), "average_price": float(order.get("ap", 0)), "filled_quantity": float(order.get("z", 0)), "order_time": int(order.get("T", collected_at)), "collected_at": collected_at})
         finally: ws.close()
         return events
 

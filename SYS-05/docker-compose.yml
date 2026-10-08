@@ -7,6 +7,11 @@ services:
     image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: minio_s3
     restart: always
+    networks:
+      default:
+        aliases:
+          - minio
+          - minio-s3
     ports:
       - "127.0.0.1:${MINIO_API_PORT:?Set MINIO_API_PORT in .env}:9000"
       - "127.0.0.1:${MINIO_CONSOLE_PORT:?Set MINIO_CONSOLE_PORT in .env}:9001"

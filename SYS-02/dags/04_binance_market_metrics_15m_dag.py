@@ -42,7 +42,7 @@ def notify_hourly_collection_success(context):
 
 def extract_market_metrics():
     now = int(datetime.now(timezone.utc).timestamp()*1000); c = BinanceMarketMetricsOperator(MARKET_SYMBOLS); active, unavailable = c.available_symbols()
-    rows = c.collect_spot(active, now); rows["futures_liquidations"] = c.collect_liquidations(int(os.getenv("LIQUIDATION_COLLECTION_SECONDS", "870")), now)
+    rows = c.collect_spot(active, now); rows["futures_liquidations"] = c.collect_liquidations(int(os.getenv("LIQUIDATION_COLLECTION_SECONDS", "15")), now)
     key = datetime.fromtimestamp(now/1000, timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return {"run_key": key, "available_symbols": active, "unavailable_symbols": unavailable, "bronze_paths": MarketMetricsPersistenceOperator().write_layer("bronze", key, rows)}
 def transform_to_silver(ti):

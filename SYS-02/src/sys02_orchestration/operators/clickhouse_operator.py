@@ -5,7 +5,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 import requests
-from sys02_orchestration.config import config
+from sys02_orchestration.config import config, SYMBOL_TO_PAIR_ID
 
 
 class ClickHouseTaskOperator:
@@ -22,16 +22,23 @@ class ClickHouseTaskOperator:
             response.raise_for_status()
             return response.text.strip()
         except Exception as exc:
-            raise RuntimeError(f"ClickHouse query failed at {self.host}:{self.port}: {exc}") from exc
+            err_detail = ""
+            if hasattr(exc, "response") and exc.response is not None:
+                err_detail = f" | ClickHouse response: {exc.response.text.strip()}"
+            raise RuntimeError(f"ClickHouse query failed at {self.host}:{self.port}: {exc}{err_detail}") from exc
 
     def ensure_tables_exist(self) -> None:
         self.execute_sql("""
             CREATE TABLE IF NOT EXISTS crypto_klines_gold (
+                pair_id UInt8 DEFAULT 0,
                 symbol LowCardinality(String), open_time DateTime64(3, 'UTC'),
                 close_time DateTime64(3, 'UTC'), open Float64, high Float64,
                 low Float64, close Float64, volume Float64,
-                quote_asset_volume Float64, number_of_trades UInt32,
-                sma_20 Float64, rsi_14 Float64,
+                quote_asset_volume Float64 DEFAULT 0, number_of_trades UInt32 DEFAULT 0,
+                taker_buy_base_asset_volume Float64 DEFAULT 0,
+                taker_buy_quote_asset_volume Float64 DEFAULT 0,
+                sma_20 Float64 DEFAULT 0, rsi_14 Float64 DEFAULT 0,
+                collected_at DateTime64(3, 'UTC') DEFAULT now64(3),
                 updated_at DateTime DEFAULT now()
             ) ENGINE = ReplacingMergeTree(updated_at) ORDER BY (symbol, open_time)
         """)
@@ -45,6 +52,7 @@ class ClickHouseTaskOperator:
             symbol = str(row["symbol"])
             if not symbol.isalnum():
                 raise ValueError(f"Invalid symbol: {symbol}")
+            pid = int(row.get("pair_id", 0)) or SYMBOL_TO_PAIR_ID.get(symbol, 0)
             open_time = datetime.fromtimestamp(int(row["timestamp"]), timezone.utc)
             close_time = open_time.replace(second=59, microsecond=999000)
             open_text = open_time.strftime("%Y-%m-%d %H:%M:%S.000")
@@ -52,13 +60,13 @@ class ClickHouseTaskOperator:
             close = float(row["close"])
             volume = float(row["volume"])
             values.append(
-                f"('{symbol}','{open_text}','{close_text}',{float(row['open'])},"
+                f"({pid},'{symbol}','{open_text}','{close_text}',{float(row['open'])},"
                 f"{float(row['high'])},{float(row['low'])},{close},{volume},"
                 f"{close * volume},0,0,0)"
             )
         self.execute_sql(
             "INSERT INTO crypto_klines_gold "
-            "(symbol,open_time,close_time,open,high,low,close,volume,"
+            "(pair_id,symbol,open_time,close_time,open,high,low,close,volume,"
             "quote_asset_volume,number_of_trades,sma_20,rsi_14) VALUES "
             + ",".join(values)
         )
@@ -82,16 +90,31 @@ class ClickHouseTaskOperator:
                 if key in item: item[key]=json.dumps(item[key],separators=(",",":"))
             normalized.append(item)
         try:
-            r=requests.post(self.url,params={"query":f"INSERT INTO {table} FORMAT JSONEachRow"},auth=(self.user,self.password),data="\n".join(json.dumps(x,separators=(",",":")) for x in normalized).encode(),timeout=45); r.raise_for_status()
-        except Exception as exc: raise RuntimeError(f"ClickHouse insert failed for {table}: {exc}") from exc
+            r = requests.post(
+                self.url,
+                params={"query": f"INSERT INTO {table} SETTINGS input_format_skip_unknown_fields=1 FORMAT JSONEachRow"},
+                auth=(self.user, self.password),
+                data="\n".join(json.dumps(x, separators=(",", ":")) for x in normalized).encode(),
+                timeout=45,
+            )
+            r.raise_for_status()
+        except Exception as exc:
+            err_detail = ""
+            if hasattr(exc, "response") and exc.response is not None:
+                err_detail = f" | ClickHouse response: {exc.response.text.strip()}"
+            raise RuntimeError(f"ClickHouse insert failed for {table}: {exc}{err_detail}") from exc
         return len(rows)
+
     def ensure_market_metric_tables(self):
         self.ensure_tables_exist()
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS taker_buy_base_asset_volume Float64 DEFAULT 0")
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS taker_buy_quote_asset_volume Float64 DEFAULT 0")
-        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_agg_trades_gold (event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),aggregate_trade_id UInt64,price Float64,quantity Float64,first_trade_id UInt64,last_trade_id UInt64,trade_time DateTime64(3,'UTC'),buyer_is_market_maker Bool,collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,aggregate_trade_id)")
-        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_order_book_depth_gold (symbol LowCardinality(String),last_update_id UInt64,bids String,asks String,bid_volume Float64,ask_volume Float64,order_book_imbalance Float64,observed_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(observed_at) ORDER BY (symbol,last_update_id)")
-        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_futures_liquidations_gold (event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),side LowCardinality(String),price Float64,quantity Float64,order_id UInt64,order_type LowCardinality(String),time_in_force LowCardinality(String),order_status LowCardinality(String),average_price Float64,filled_quantity Float64,order_time DateTime64(3,'UTC'),collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,order_id,order_time)")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_agg_trades_gold (pair_id UInt8 DEFAULT 0, event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),aggregate_trade_id UInt64,price Float64,quantity Float64,first_trade_id UInt64,last_trade_id UInt64,trade_time DateTime64(3,'UTC'),buyer_is_market_maker Bool,collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,aggregate_trade_id)")
+        self.execute_sql("ALTER TABLE crypto_agg_trades_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_order_book_depth_gold (pair_id UInt8 DEFAULT 0, symbol LowCardinality(String),last_update_id UInt64,bids String,asks String,bid_volume Float64,ask_volume Float64,order_book_imbalance Float64,observed_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(observed_at) ORDER BY (symbol,last_update_id)")
+        self.execute_sql("ALTER TABLE crypto_order_book_depth_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0")
+        self.execute_sql("CREATE TABLE IF NOT EXISTS crypto_futures_liquidations_gold (pair_id UInt8 DEFAULT 0, event_type LowCardinality(String),event_time DateTime64(3,'UTC'),symbol LowCardinality(String),side LowCardinality(String),price Float64,quantity Float64,order_id UInt64,order_type LowCardinality(String),time_in_force LowCardinality(String),order_status LowCardinality(String),average_price Float64,filled_quantity Float64,order_time DateTime64(3,'UTC'),collected_at DateTime64(3,'UTC')) ENGINE=ReplacingMergeTree(collected_at) ORDER BY (symbol,order_id,order_time)")
+        self.execute_sql("ALTER TABLE crypto_futures_liquidations_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0")
     def insert_market_metric_rows(self, dataset, rows):
         tables={"klines":"crypto_klines_gold","agg_trades":"crypto_agg_trades_gold","order_book_depth":"crypto_order_book_depth_gold","futures_liquidations":"crypto_futures_liquidations_gold"}
         if dataset not in tables: raise ValueError(f"Unknown market metrics dataset: {dataset}")

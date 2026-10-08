@@ -36,7 +36,7 @@ class LakehouseTaskOperator:
     def write_bronze_klines(self, records: List[Dict[str, Any]], symbol: str, date_str: str) -> Dict[str, Any]:
         if not records:
             raise ValueError("Cannot write an empty Bronze batch")
-        path = self._write(self.bronze_bucket, f"klines/symbol={symbol}/date={date_str}/bronze.json", {"symbol": symbol, "records": records})
+        path = self._write(self.bronze_bucket, f"klines/symbol={symbol}/date={date_str}/bronze.json", {"symbol": symbol, "source": "v1.0.0_api_klines", "records": records})
         return {"status": "SUCCESS", "bronze_output_path": path, "records": records}
 
     def process_bronze_to_silver(self, records: List[Dict[str, Any]], symbol: str, date_str: str) -> Dict[str, Any]:
@@ -44,11 +44,18 @@ class LakehouseTaskOperator:
             raise ValueError("Cannot transform an empty Bronze batch")
         fields = ("symbol", "timestamp", "open", "high", "low", "close", "volume")
         cleaned = [{field: row[field] for field in fields} for row in records]
-        path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "records": cleaned})
+        path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "source": "v1.0.0_api_klines", "records": cleaned})
         return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned}
 
     def write_market_metrics(self, bucket, dataset, run_key, records):
-        return self._write(bucket, f"market_metrics/{dataset}/run={run_key}/data.json", {"dataset": dataset, "records": records})
+        source_map = {
+            "klines": "v1.0.0_api_klines",
+            "agg_trades": "v1.0.0_api_aggtrade",
+            "order_book_depth": "v1.0.0_api_depth",
+            "futures_liquidations": "v1.0.0_api_liquidations"
+        }
+        source_tag = source_map.get(dataset, f"v1.0.0_api_{dataset}")
+        return self._write(bucket, f"market_metrics/{dataset}/run={run_key}/data.json", {"dataset": dataset, "source": source_tag, "records": records})
     def read_market_metrics(self, path):
         if not path.startswith("s3://"): raise ValueError(f"Invalid MinIO path: {path}")
         bucket, obj = path[5:].split("/", 1); response = self._client().get_object(bucket, obj)

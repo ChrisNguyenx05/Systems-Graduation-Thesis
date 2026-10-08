@@ -11,6 +11,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+from sys02_orchestration.config import SYMBOL_TO_PAIR_ID
 from sys02_orchestration.operators.clickhouse_operator import ClickHouseTaskOperator
 from sys02_orchestration.operators.lakehouse_operator import LakehouseTaskOperator
 from sys02_orchestration.utils.data_quality import validate_klines_data
@@ -75,8 +76,9 @@ def send_dag_success_alert(context) -> None:
 def extract_bronze_task() -> dict:
     response = requests.get("https://api.binance.com/api/v3/klines", params={"symbol": SYMBOL, "interval": "1m", "limit": 20}, timeout=20)
     response.raise_for_status()
+    pid = SYMBOL_TO_PAIR_ID.get(SYMBOL, 1)
     records = [
-        {"symbol": SYMBOL, "timestamp": int(row[0] // 1000), "open": float(row[1]), "high": float(row[2]), "low": float(row[3]), "close": float(row[4]), "volume": float(row[5])}
+        {"pair_id": pid, "symbol": SYMBOL, "timestamp": int(row[0] // 1000), "open": float(row[1]), "high": float(row[2]), "low": float(row[3]), "close": float(row[4]), "volume": float(row[5])}
         for row in response.json()
     ]
     date_str = datetime.now(timezone.utc).date().isoformat()
