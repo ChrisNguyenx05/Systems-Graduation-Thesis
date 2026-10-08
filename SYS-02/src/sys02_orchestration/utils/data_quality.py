@@ -1,4 +1,4 @@
-﻿"""
+"""
 Data Quality Validation Gates for ETL Tasks
 """
 

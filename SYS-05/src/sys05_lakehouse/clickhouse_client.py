@@ -1,4 +1,4 @@
-﻿"""
+"""
 ClickHouse OLAP Database Client for Fast Financial Time-Series Analytics
 """
 import time
@@ -98,16 +98,20 @@ class ClickHouseManager:
             """
             CREATE TABLE IF NOT EXISTS default.crypto_orderbook_depth (
                 symbol LowCardinality(String),
-                update_id UInt64,
-                bids Array(Tuple(Float64, Float64)),
-                asks Array(Tuple(Float64, Float64)),
-                event_time DateTime64(3, 'UTC'),
+                update_id UInt64 DEFAULT 0,
+                last_update_id UInt64 DEFAULT 0,
+                bids String DEFAULT '',
+                asks String DEFAULT '',
+                bid_volume Float64 DEFAULT 0.0,
+                ask_volume Float64 DEFAULT 0.0,
+                order_book_imbalance Float64 DEFAULT 0.0,
+                event_time DateTime64(3, 'UTC') DEFAULT now64(3),
+                observed_at DateTime64(3, 'UTC') DEFAULT now64(3),
                 created_at DateTime DEFAULT now()
             )
             ENGINE = MergeTree()
-            PRIMARY KEY (symbol, event_time)
-            ORDER BY (symbol, event_time)
-            SETTINGS index_granularity = 8192;
+            PRIMARY KEY (symbol, observed_at)
+            ORDER BY (symbol, observed_at, last_update_id);
             """,
             """
             CREATE TABLE IF NOT EXISTS default.crypto_liquidations (
@@ -290,7 +294,7 @@ class ClickHouseManager:
 
     def get_active_trading_pairs(self) -> List[Dict[str, Any]]:
         """
-        Returns list of active trading pairs registered from Google Sheet.
+        Returns list of active trading pairs registered from Google Sheet or dim_trading_pairs.
         Deep interface method exposing simple list to downstream callers.
         """
         client = self.get_client()
@@ -299,8 +303,13 @@ class ClickHouseManager:
             res = client.query(sql)
             return [dict(zip(res.column_names, row)) for row in res.result_rows]
         except Exception as e:
-            logger.error(f"Error fetching active trading pairs: {e}")
-            return []
+            try:
+                sql_dim = "SELECT symbol, base_coin AS base_asset, quote_coin AS quote_asset, category FROM default.dim_trading_pairs WHERE is_active = 1 ORDER BY symbol"
+                res = client.query(sql_dim)
+                return [dict(zip(res.column_names, row)) for row in res.result_rows]
+            except Exception as e2:
+                logger.error(f"Error fetching active trading pairs: {e} | fallback: {e2}")
+                return []
 
     def insert_trades(self, records: List[Dict[str, Any]]) -> bool:
         """Batch insert aggTrade real-time trade stream records."""

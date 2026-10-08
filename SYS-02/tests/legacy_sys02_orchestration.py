@@ -1,4 +1,4 @@
-﻿"""
+"""
 Pytest & Unittest Test Suite for SYS-02 Orchestration Components & DAG Integrity
 """
 

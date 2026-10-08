@@ -424,3 +424,23 @@ CREATE TABLE IF NOT EXISTS default.crypto_liquidations (
 PRIMARY KEY (symbol, trade_time)
 ORDER BY (symbol, trade_time);
 
+CREATE TABLE IF NOT EXISTS default.crypto_trading_pairs (
+    symbol LowCardinality(String),
+    base_asset LowCardinality(String),
+    quote_asset LowCardinality(String),
+    category LowCardinality(String),
+    is_active UInt8 DEFAULT 1,
+    updated_at DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(updated_at)
+PRIMARY KEY (symbol)
+ORDER BY (symbol);
+
+INSERT INTO default.crypto_trading_pairs (symbol, base_asset, quote_asset, category, is_active) VALUES
+    ('BTCUSDT', 'BTC', 'USDT', 'popular', 1),
+    ('ETHUSDT', 'ETH', 'USDT', 'popular', 1),
+    ('BNBUSDT', 'BNB', 'USDT', 'popular', 1),
+    ('AAPLBUSDT', 'AAPLB', 'USDT', 'new_coin', 1),
+    ('AMZNBUSDT', 'AMZNB', 'USDT', 'new_coin', 1),
+    ('DELLBUSDT', 'DELLB', 'USDT', 'new_coin', 1);
+
+

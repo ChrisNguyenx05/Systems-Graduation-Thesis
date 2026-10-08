@@ -1,4 +1,4 @@
-﻿"""Durable, concurrency-safe SYS-06 dispatch core used by the v2 HTTP service."""
+"""Durable, concurrency-safe SYS-06 dispatch core used by the v2 HTTP service."""
 
 import threading
 import time
