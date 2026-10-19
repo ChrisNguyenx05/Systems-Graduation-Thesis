@@ -8,22 +8,49 @@ logger = logging.getLogger(__name__)
 
 class AirflowConnector:
     def __init__(self):
-        self.base_url = settings.AIRFLOW_API_URL
-        self.auth = (settings.AIRFLOW_USER, settings.AIRFLOW_PASSWORD)
-        self.timeout = 2.5
+        url = settings.AIRFLOW_API_URL.rstrip('/')
+        if url.endswith('/api/v1'):
+            url = url[:-7] + '/api/v2'
+        self.base_url = url
+        self.server_url = settings.AIRFLOW_URL.rstrip('/')
+        self.user = settings.AIRFLOW_USER
+        self.password = settings.AIRFLOW_PASSWORD
+        self.timeout = 5.0
+        self._token: Optional[str] = None
+
+    def _get_headers(self) -> Dict[str, str]:
+        """Obtain or refresh JWT access token for Airflow 3 API v2."""
+        if not self._token:
+            try:
+                auth_url = f"{self.server_url}/auth/token"
+                resp = requests.post(
+                    auth_url,
+                    json={"username": self.user, "password": self.password},
+                    timeout=self.timeout
+                )
+                if resp.status_code in (200, 201):
+                    self._token = resp.json().get("access_token")
+            except Exception as exc:
+                logger.warning("Failed to obtain Airflow JWT token: %s", exc)
+
+        if self._token:
+            return {"Authorization": f"Bearer {self._token}"}
+        return {}
 
     def get_health(self) -> Dict[str, Any]:
-        """Check Airflow service health."""
+        """Check Airflow service health via Airflow 3 monitor endpoint."""
         try:
-            url = f"{self.base_url}/health"
-            resp = requests.get(url, auth=self.auth, timeout=self.timeout)
+            url = f"{self.base_url}/monitor/health"
+            resp = requests.get(url, timeout=self.timeout)
             if resp.status_code == 200:
                 data = resp.json()
                 meta_status = data.get("metadatabase", {}).get("status", "unknown")
                 sched_status = data.get("scheduler", {}).get("status", "unknown")
+                dag_proc_status = data.get("dag_processor", {}).get("status", "unknown")
+                is_healthy = meta_status == "healthy" and sched_status == "healthy"
                 return {
-                    "online": meta_status == "healthy",
-                    "status": "HEALTHY" if meta_status == "healthy" else "DEGRADED",
+                    "online": is_healthy,
+                    "status": "HEALTHY" if is_healthy else "DEGRADED",
                     "details": data
                 }
         except Exception as e:
@@ -34,7 +61,10 @@ class AirflowConnector:
         """List all DAGs and their paused/active states."""
         try:
             url = f"{self.base_url}/dags?limit=100"
-            resp = requests.get(url, auth=self.auth, timeout=self.timeout)
+            resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+            if resp.status_code == 401:
+                self._token = None
+                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
             if resp.status_code == 200:
                 return resp.json().get("dags", [])
         except Exception as e:
@@ -45,7 +75,10 @@ class AirflowConnector:
         """Get single DAG metadata by dag_id."""
         try:
             url = f"{self.base_url}/dags/{dag_id}"
-            resp = requests.get(url, auth=self.auth, timeout=self.timeout)
+            resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+            if resp.status_code == 401:
+                self._token = None
+                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
             if resp.status_code == 200:
                 return resp.json()
         except Exception as e:
@@ -53,24 +86,68 @@ class AirflowConnector:
         return {}
 
     def get_dag_runs(self, dag_id: str, limit: int = 15) -> List[Dict[str, Any]]:
-        """Get recent DAG runs for a specific DAG."""
+        """Get recent DAG runs for a specific DAG with automatic pagination support when limit > 100."""
         try:
-            url = f"{self.base_url}/dags/{dag_id}/dagRuns?order_by=-execution_date&limit={limit}"
-            resp = requests.get(url, auth=self.auth, timeout=self.timeout)
-            if resp.status_code == 200:
-                return resp.json().get("dag_runs", [])
+            if limit <= 100:
+                url = f"{self.base_url}/dags/{dag_id}/dagRuns?order_by=-start_date&limit={limit}"
+                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+                if resp.status_code == 401:
+                    self._token = None
+                    resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+                if resp.status_code == 200:
+                    return resp.json().get("dag_runs", [])
+                # Fallback without order_by
+                url_fallback = f"{self.base_url}/dags/{dag_id}/dagRuns?limit={limit}"
+                resp_fallback = requests.get(url_fallback, headers=self._get_headers(), timeout=self.timeout)
+                if resp_fallback.status_code == 200:
+                    return resp_fallback.json().get("dag_runs", [])
+                return []
+
+            # Multi-page pagination when limit > 100
+            all_runs = []
+            offset = 0
+            page_size = 100
+            while len(all_runs) < limit:
+                cur_limit = min(page_size, limit - len(all_runs))
+                url = f"{self.base_url}/dags/{dag_id}/dagRuns?order_by=-start_date&limit={cur_limit}&offset={offset}"
+                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+                if resp.status_code == 401:
+                    self._token = None
+                    resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+                if resp.status_code != 200:
+                    # Fallback without order_by
+                    url = f"{self.base_url}/dags/{dag_id}/dagRuns?limit={cur_limit}&offset={offset}"
+                    resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    runs = data.get("dag_runs", [])
+                    if not runs:
+                        break
+                    all_runs.extend(runs)
+                    total_entries = data.get("total_entries", len(all_runs))
+                    if len(all_runs) >= total_entries or len(runs) < cur_limit:
+                        break
+                    offset += len(runs)
+                else:
+                    break
+            return all_runs
         except Exception as e:
             logger.error("Failed to get dag runs for %s: %s", dag_id, e)
         return []
 
-    def trigger_dag_run(self, dag_id: str, conf: Optional[Dict[str, Any]] = None, logical_date: Optional[str] = None) -> Dict[str, Any]:
+    def trigger_dag_run(self, dag_id: str, conf: Optional[Dict[str, Any]] = None, logical_date: Optional[str] = None, dag_run_id: Optional[str] = None) -> Dict[str, Any]:
         """Trigger a new DAG run with custom parameters (conf)."""
         try:
             url = f"{self.base_url}/dags/{dag_id}/dagRuns"
             payload: Dict[str, Any] = {"conf": conf or {}}
             if logical_date:
                 payload["logical_date"] = logical_date
-            resp = requests.post(url, auth=self.auth, json=payload, timeout=8)
+            else:
+                from datetime import datetime, timezone
+                payload["logical_date"] = datetime.now(timezone.utc).isoformat()
+            if dag_run_id:
+                payload["dag_run_id"] = dag_run_id
+            resp = requests.post(url, headers=self._get_headers(), json=payload, timeout=8)
             if resp.status_code in (200, 201):
                 return {"success": True, "data": resp.json()}
             return {"success": False, "status_code": resp.status_code, "error": resp.text}
@@ -93,8 +170,8 @@ class AirflowConnector:
                 payload["start_date"] = start_date
             if end_date:
                 payload["end_date"] = end_date
-            resp = requests.post(url, auth=self.auth, json=payload, timeout=8)
-            if resp.status_code == 200:
+            resp = requests.post(url, headers=self._get_headers(), json=payload, timeout=8)
+            if resp.status_code in (200, 201):
                 return {"success": True, "data": resp.json()}
             return {"success": False, "status_code": resp.status_code, "error": resp.text}
         except Exception as e:
@@ -106,7 +183,7 @@ class AirflowConnector:
         try:
             encoded_run_id = urllib.parse.quote(dag_run_id, safe='')
             url = f"{self.base_url}/dags/{dag_id}/dagRuns/{encoded_run_id}/taskInstances"
-            resp = requests.get(url, auth=self.auth, timeout=self.timeout)
+            resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
             if resp.status_code == 200:
                 return resp.json().get("task_instances", [])
         except Exception as e:
@@ -122,7 +199,7 @@ class AirflowConnector:
 
         # 1. Check if DAG itself is paused
         try:
-            dag_resp = requests.get(f"{self.base_url}/dags/{dag_id}", auth=self.auth, timeout=self.timeout)
+            dag_resp = requests.get(f"{self.base_url}/dags/{dag_id}", headers=self._get_headers(), timeout=self.timeout)
             if dag_resp.status_code == 200:
                 dag_data = dag_resp.json()
                 dag_paused = dag_data.get("is_paused", False)
@@ -134,7 +211,7 @@ class AirflowConnector:
         # 2. Query DagRun state
         run_data = {}
         try:
-            run_resp = requests.get(f"{self.base_url}/dags/{dag_id}/dagRuns/{encoded_run_id}", auth=self.auth, timeout=self.timeout)
+            run_resp = requests.get(f"{self.base_url}/dags/{dag_id}/dagRuns/{encoded_run_id}", headers=self._get_headers(), timeout=self.timeout)
             if run_resp.status_code == 200:
                 run_data = run_resp.json()
         except Exception as e:
@@ -143,7 +220,7 @@ class AirflowConnector:
         # 3. Query Task Instances
         task_instances = []
         try:
-            ti_resp = requests.get(f"{self.base_url}/dags/{dag_id}/dagRuns/{encoded_run_id}/taskInstances", auth=self.auth, timeout=self.timeout)
+            ti_resp = requests.get(f"{self.base_url}/dags/{dag_id}/dagRuns/{encoded_run_id}/taskInstances", headers=self._get_headers(), timeout=self.timeout)
             if ti_resp.status_code == 200:
                 task_instances = ti_resp.json().get("task_instances", [])
         except Exception as e:

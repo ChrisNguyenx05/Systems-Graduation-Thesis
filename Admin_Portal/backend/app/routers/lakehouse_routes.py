@@ -3,7 +3,7 @@ import time
 import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import Response
 from app.connectors.clickhouse import clickhouse_connector
 from app.connectors.minio_client import minio_connector
@@ -16,9 +16,12 @@ router = APIRouter(prefix="/api/v1/lakehouse", tags=["Lakehouse & ClickHouse"])
 def get_lakehouse_stats(current_user: dict = Depends(get_current_user)):
     ch_stats = clickhouse_connector.get_overview_stats()
     minio_health = minio_connector.get_health()
+    storage_overview = minio_connector.get_storage_overview()
     return {
         "clickhouse": ch_stats,
-        "minio": minio_health
+        "minio": minio_health,
+        "storage": storage_overview,
+        "user_role": current_user.get("role", "Viewer")
     }
 
 @router.get("/files")
@@ -27,8 +30,22 @@ def get_lakehouse_files(
     prefix: str = Query(""),
     current_user: dict = Depends(get_current_user)
 ):
+    user_role = (current_user.get("role") or "").lower()
+    # RBAC: Bronze is raw internal lakehouse data - restricted to Super Admin, Data Engineer & Operator
+    if "bronze" in bucket.lower():
+        if not any(r in user_role for r in ["admin", "engineer", "operator"]):
+            raise HTTPException(
+                status_code=403, 
+                detail="ACCESS_DENIED: Raw Bronze Lakehouse data requires Data Engineer or Admin role."
+            )
+    
     files = minio_connector.list_objects(bucket=bucket, prefix=prefix, max_keys=50)
-    return {"bucket": bucket, "prefix": prefix, "files": files}
+    return {
+        "bucket": bucket, 
+        "prefix": prefix, 
+        "files": files,
+        "can_export": any(r in user_role for r in ["admin", "engineer", "operator"])
+    }
 
 @router.get("/download-url")
 def get_download_url(
@@ -36,8 +53,27 @@ def get_download_url(
     key: str = Query(...),
     current_user: dict = Depends(get_current_user)
 ):
+    user_role = (current_user.get("role") or "").lower()
+    # RBAC Enforcement: Only Authorized roles can generate presigned download URLs
+    if "bronze" in bucket.lower():
+        if not any(r in user_role for r in ["admin", "engineer"]):
+            raise HTTPException(
+                status_code=403,
+                detail="ACCESS_DENIED: Only Data & AI Engineers or Administrators can download raw Bronze objects."
+            )
+    elif "silver" in bucket.lower():
+        if not any(r in user_role for r in ["admin", "engineer", "operator"]):
+            raise HTTPException(
+                status_code=403,
+                detail="ACCESS_DENIED: Operator or Engineer role required to export Silver tier artifacts."
+            )
+
     url = minio_connector.generate_presigned_download_url(bucket=bucket, object_key=key, expires_in=300)
-    return {"download_url": url, "expires_seconds": 300}
+    return {
+        "download_url": url, 
+        "expires_seconds": 300,
+        "authorized_user": current_user.get("sub", "")
+    }
 
 def resolve_source_and_naming(key: str, filename: Optional[str] = None, product: Optional[str] = None, symbol: Optional[str] = None) -> dict:
     """

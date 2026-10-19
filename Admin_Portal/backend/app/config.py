@@ -25,7 +25,7 @@ class Settings:
 
     # Airflow SYS-02
     AIRFLOW_URL: str = os.getenv("AIRFLOW_URL", "http://localhost:8085")
-    AIRFLOW_API_URL: str = os.getenv("AIRFLOW_API_URL", "http://localhost:8085/api/v1")
+    AIRFLOW_API_URL: str = os.getenv("AIRFLOW_API_URL", "http://localhost:8085/api/v2")
     AIRFLOW_USER: str = os.getenv("AIRFLOW_ADMIN_USERNAME", "nhfinanceadmin")
     AIRFLOW_PASSWORD: str = os.getenv("AIRFLOW_ADMIN_PASSWORD", "nhathuy123")
 

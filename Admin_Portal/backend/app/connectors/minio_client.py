@@ -50,6 +50,41 @@ class MinIOConnector:
                 "error": "Cannot reach MinIO S3 API (9000)"
             }
 
+    def get_storage_overview(self) -> Dict[str, Any]:
+        """Calculates storage footprint and layer metrics across buckets."""
+        overview = {
+            "online": False,
+            "total_objects": 0,
+            "total_bytes": 0,
+            "buckets": {}
+        }
+        try:
+            buckets_resp = self.client.list_buckets()
+            overview["online"] = True
+            for b in buckets_resp.get("Buckets", []):
+                b_name = b["Name"]
+                obj_count = 0
+                byte_sum = 0
+                try:
+                    paginator = self.client.get_paginator('list_objects_v2')
+                    page_iterator = paginator.paginate(Bucket=b_name, PaginationConfig={'MaxItems': 1000})
+                    for page in page_iterator:
+                        for item in page.get("Contents", []):
+                            obj_count += 1
+                            byte_sum += item["Size"]
+                except Exception:
+                    pass
+                overview["buckets"][b_name] = {
+                    "count": obj_count,
+                    "bytes": byte_sum
+                }
+                overview["total_objects"] += obj_count
+                overview["total_bytes"] += byte_sum
+            return overview
+        except Exception as e:
+            logger.debug("Failed to calculate storage overview: %s", e)
+            return overview
+
     def list_objects(self, bucket: str = settings.MINIO_BRONZE_BUCKET, prefix: str = "", max_keys: int = 50) -> List[Dict[str, Any]]:
         """List objects in bucket with size and timestamp, sorted by newest first."""
         try:

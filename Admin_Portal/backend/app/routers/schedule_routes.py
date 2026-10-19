@@ -75,6 +75,14 @@ PRODUCT_META = {
     "liquidations": {
         "code": "BINANCE_LIQUIDATION_15M",
         "name": "Future Liquidation Events"
+    },
+    "ai_inference": {
+        "code": "AI_HOURLY_INFERENCE",
+        "name": "Hourly AI Models Inference (LSTM + Anomaly + Fraud)"
+    },
+    "ml_retrain": {
+        "code": "ML_MODEL_RETRAIN",
+        "name": "Bi-weekly ML Retrain & Model Registry"
     }
 }
 
@@ -96,6 +104,99 @@ INSTANCE_META = {
 
 def get_now_gmt7() -> datetime:
     return datetime.now(timezone.utc).astimezone(TZ_VN)
+
+def format_duration(seconds: Optional[float]) -> str:
+    if seconds is None:
+        return "--"
+    try:
+        sec = int(round(float(seconds)))
+    except Exception:
+        return "--"
+    if sec < 0:
+        return "--"
+    if sec < 60:
+        return f"{sec} s"
+    mins = sec // 60
+    rem_sec = sec % 60
+    if mins < 60:
+        if rem_sec > 0:
+            return f"{mins} m {rem_sec} s"
+        return f"{mins} min"
+    hrs = mins // 60
+    rem_min = mins % 60
+    if rem_min > 0:
+        return f"{hrs} h {rem_min} min"
+    return f"{hrs} h"
+
+# 4-digit system IDs matching user rule:
+# Digit 1: Trading Pair ID from dim_trading_pairs (1: BTCUSDT, 2: ETHUSDT, 3: BNBUSDT, 4: AAPLBUSDT, 5: AMZNBUSDT, 6: DELLBUSDT)
+# Digit 2: Platform (1: API, 0: WSIS)
+# Digit 3: Product (1: klines, 2: trade/aggtrade, 3: orderbook/depth, 4: futureliquidation, 5: ai_inference)
+# Digit 4: Random digit (0-9)
+SCHEDULE_NUMERIC_IDS = {
+    # BTCUSDT (Pair 1)
+    ("BTCUSDT", "klines", "API"): 1114,
+    ("BTCUSDT", "aggtrade", "API"): 1128,
+    ("BTCUSDT", "depth", "API"): 1135,
+    ("BTCUSDT", "liquidations", "API"): 1142,
+    ("BTCUSDT", "klines", "WSIS"): 1016,
+    ("BTCUSDT", "aggtrade", "WSIS"): 1023,
+    ("BTCUSDT", "depth", "WSIS"): 1037,
+    ("BTCUSDT", "liquidations", "WSIS"): 1049,
+    # ETHUSDT (Pair 2)
+    ("ETHUSDT", "klines", "API"): 2117,
+    ("ETHUSDT", "aggtrade", "API"): 2124,
+    ("ETHUSDT", "depth", "API"): 2131,
+    ("ETHUSDT", "liquidations", "API"): 2148,
+    ("ETHUSDT", "klines", "WSIS"): 2015,
+    ("ETHUSDT", "aggtrade", "WSIS"): 2022,
+    ("ETHUSDT", "depth", "WSIS"): 2036,
+    ("ETHUSDT", "liquidations", "WSIS"): 2043,
+    # BNBUSDT (Pair 3)
+    ("BNBUSDT", "klines", "API"): 3112,
+    ("BNBUSDT", "aggtrade", "API"): 3129,
+    ("BNBUSDT", "depth", "API"): 3134,
+    ("BNBUSDT", "liquidations", "API"): 3147,
+    ("BNBUSDT", "klines", "WSIS"): 3018,
+    ("BNBUSDT", "aggtrade", "WSIS"): 3021,
+    ("BNBUSDT", "depth", "WSIS"): 3035,
+    ("BNBUSDT", "liquidations", "WSIS"): 3046,
+    # AAPLBUSDT (Pair 4)
+    ("AAPLBUSDT", "klines", "API"): 4113,
+    ("AAPLBUSDT", "aggtrade", "API"): 4126,
+    ("AAPLBUSDT", "depth", "API"): 4138,
+    ("AAPLBUSDT", "liquidations", "API"): 4141,
+    ("AAPLBUSDT", "klines", "WSIS"): 4012,
+    ("AAPLBUSDT", "aggtrade", "WSIS"): 4027,
+    ("AAPLBUSDT", "depth", "WSIS"): 4034,
+    ("AAPLBUSDT", "liquidations", "WSIS"): 4045,
+    # AMZNBUSDT (Pair 5)
+    ("AMZNBUSDT", "klines", "API"): 5119,
+    ("AMZNBUSDT", "aggtrade", "API"): 5123,
+    ("AMZNBUSDT", "depth", "API"): 5137,
+    ("AMZNBUSDT", "liquidations", "API"): 5144,
+    ("AMZNBUSDT", "klines", "WSIS"): 5011,
+    ("AMZNBUSDT", "aggtrade", "WSIS"): 5028,
+    ("AMZNBUSDT", "depth", "WSIS"): 5032,
+    ("AMZNBUSDT", "liquidations", "WSIS"): 5046,
+    # DELLBUSDT (Pair 6)
+    ("DELLBUSDT", "klines", "API"): 6115,
+    ("DELLBUSDT", "aggtrade", "API"): 6122,
+    ("DELLBUSDT", "depth", "API"): 6139,
+    ("DELLBUSDT", "liquidations", "API"): 6143,
+    ("DELLBUSDT", "klines", "WSIS"): 6017,
+    ("DELLBUSDT", "aggtrade", "WSIS"): 6024,
+    ("DELLBUSDT", "depth", "WSIS"): 6031,
+    ("DELLBUSDT", "liquidations", "WSIS"): 6048,
+    # AI models / DAGs
+    ("BTCUSDT", "ai_inference", "API"): 1153,
+    ("ETHUSDT", "ai_inference", "API"): 2156,
+    ("BTCUSDT", "market_metrics", "API"): 1157,
+    ("BTCUSDT", "ml_retrain", "API"): 1162,
+}
+
+def get_schedule_numeric_id(symbol: str, prod_id: str, platform: str = "API") -> int:
+    return auto_numbering_engine.generate_id(symbol, prod_id, platform)
 
 def get_all_trading_pairs_meta() -> List[Dict[str, Any]]:
     """
@@ -138,6 +239,145 @@ def get_all_trading_pairs_meta() -> List[Dict[str, Any]]:
 def get_registered_symbol_set() -> set:
     pairs = get_all_trading_pairs_meta()
     return {str(p.get("symbol", "")).upper() for p in pairs if p.get("symbol")}
+
+class AutoScheduleNumberingEngine:
+    """
+    Automated Dynamic Numbering Engine for Trading Pairs and Products.
+    Follows enterprise 4-digit convention:
+      - Digit 1: Trading Pair ID (from ClickHouse default.dim_trading_pairs or auto-assigned sequentially).
+      - Digit 2: Platform instance (API = 1, WSIS = 0).
+      - Digit 3: Product Code (1: klines, 2: trade/aggtrade, 3: orderbook/depth, 4: futureliquidation, 5: ai_inference, 6: ml_retrain, 7+: dynamic new products).
+      - Digit 4: Deterministic Random Suffix (0-9).
+    Persists newly registered pairs and products to local JSON cache so numbers remain permanent across reboots.
+    """
+    def __init__(self):
+        self.data_dir = Path(__file__).resolve().parent.parent / "data"
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.products_registry_file = self.data_dir / "dynamic_products_registry.json"
+        self.pairs_registry_file = self.data_dir / "dim_trading_pairs.json"
+        
+        self.base_product_codes = {
+            "klines": 1,
+            "aggtrade": 2, "trade": 2, "trades": 2,
+            "depth": 3, "orderbook": 3,
+            "liquidations": 4, "liquidation": 4, "futureliquidation": 4,
+            "ai_inference": 5, "inference": 5,
+            "ml_retrain": 6, "retrain": 6, "market_metrics": 7
+        }
+        self.dynamic_products = self._load_dynamic_products()
+
+    def _load_dynamic_products(self) -> Dict[str, int]:
+        reg = dict(self.base_product_codes)
+        if self.products_registry_file.exists():
+            try:
+                with open(self.products_registry_file, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    if isinstance(saved, dict):
+                        reg.update(saved)
+            except Exception as e:
+                logger.warning(f"Failed to load dynamic_products_registry.json: {e}")
+        return reg
+
+    def _save_dynamic_products(self):
+        try:
+            with open(self.products_registry_file, "w", encoding="utf-8") as f:
+                json.dump(self.dynamic_products, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save dynamic_products_registry.json: {e}")
+
+    def get_registered_pairs_map(self) -> Dict[str, int]:
+        pairs_meta = get_all_trading_pairs_meta()
+        res = {}
+        for p in pairs_meta:
+            sym = str(p.get("symbol", "")).upper().replace("/", "").replace("_", "").strip()
+            if sym and p.get("pair_id") is not None:
+                res[sym] = int(p["pair_id"])
+        return res
+
+    def get_trading_pair_digit(self, symbol: str) -> int:
+        s = (symbol or "").upper().replace("/", "").replace("_", "").strip()
+        
+        # 1. Check known / ClickHouse dim_trading_pairs
+        pairs_map = self.get_registered_pairs_map()
+        if s in pairs_map:
+            pid = pairs_map[s]
+            return pid if pid <= 9 else (((pid - 1) % 9) + 1)
+                
+        # 2. Check local dim_trading_pairs.json
+        if self.pairs_registry_file.exists():
+            try:
+                with open(self.pairs_registry_file, "r", encoding="utf-8") as f:
+                    cached_pairs = json.load(f)
+                    for cp in cached_pairs:
+                        csym = str(cp.get("symbol", "")).upper().replace("/", "").replace("_", "").strip()
+                        if csym == s and cp.get("pair_id") is not None:
+                            pid = int(cp["pair_id"])
+                            return pid if pid <= 9 else (((pid - 1) % 9) + 1)
+            except Exception:
+                pass
+
+        # 3. Auto-assign next sequential pair_id for newly discovered pair
+        max_pair_id = max(pairs_map.values()) if pairs_map else 6
+        new_pair_id = max_pair_id + 1
+        
+        try:
+            existing = []
+            if self.pairs_registry_file.exists():
+                with open(self.pairs_registry_file, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            existing.append({
+                "pair_id": new_pair_id,
+                "base_coin": s.replace("USDT", ""),
+                "quote_coin": "USDT",
+                "trading_pair": f"{s.replace('USDT', '')}/USDT",
+                "symbol": s,
+                "market_type": "SPOT_FUTURES",
+                "category": "auto_discovered",
+                "is_active": 1,
+                "updated_at": get_now_gmt7().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            with open(self.pairs_registry_file, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2)
+            logger.info(f"Auto-registered new trading pair in dim_trading_pairs: {s} -> pair_id {new_pair_id}")
+        except Exception as e:
+            logger.warning(f"Could not persist new trading pair {s}: {e}")
+            
+        return new_pair_id if new_pair_id <= 9 else (((new_pair_id - 1) % 9) + 1)
+
+    def get_product_digit(self, prod_id: str) -> int:
+        p = (prod_id or "").lower().strip()
+        clean = p.replace("binance_", "").replace("_15m", "").replace("_tick", "").replace("_snap", "")
+        
+        for key, code in self.dynamic_products.items():
+            if key == clean or key in p:
+                return code if code <= 9 else (((code - 1) % 9) + 1)
+                
+        max_code = max(self.dynamic_products.values()) if self.dynamic_products else 6
+        new_code = max_code + 1
+        self.dynamic_products[clean] = new_code
+        self._save_dynamic_products()
+        logger.info(f"Auto-registered new product in dynamic_products: {clean} -> code {new_code}")
+        return new_code if new_code <= 9 else (((new_code - 1) % 9) + 1)
+
+    def generate_id(self, symbol: str, prod_id: str, platform: str = "API") -> int:
+        s = (symbol or "").upper()
+        p = (prod_id or "").lower()
+        plat = (platform or "API").upper()
+        
+        key = (s, p, plat)
+        if key in SCHEDULE_NUMERIC_IDS:
+            return SCHEDULE_NUMERIC_IDS[key]
+            
+        d1 = self.get_trading_pair_digit(s)
+        d2 = 0 if "WSIS" in plat else 1
+        d3 = self.get_product_digit(p)
+        
+        hash_val = abs(hash(f"{s}_{p}_{plat}_seed2026"))
+        d4 = (hash_val % 9) + 1
+        
+        return int(f"{d1}{d2}{d3}{d4}")
+
+auto_numbering_engine = AutoScheduleNumberingEngine()
 
 def build_schedule_item(pair_data: Dict[str, Any], prod_id: str, platform: str = "API", dag_info: Optional[Dict[str, Any]] = None, manual_states: Optional[Dict[str, bool]] = None, real_last_run_str: Optional[str] = None) -> Dict[str, Any]:
     symbol = str(pair_data.get("symbol", "")).upper()
@@ -198,8 +438,11 @@ def build_schedule_item(pair_data: Dict[str, Any], prod_id: str, platform: str =
         last_run_dt = now.replace(minute=minute_slot, second=0, microsecond=0)
         last_run_str = last_run_dt.strftime("%Y-%m-%d %H:%M")
 
+    num_id = get_schedule_numeric_id(symbol, prod_id, platform)
     return {
         "id": sched_id,
+        "numeric_id": num_id,
+        "display_id": str(num_id),
         "symbol": symbol,
         "symbol_name": sym_meta["name"],
         "market": "BINANCE_WSIS" if platform == "WSIS" else sym_meta["market"],
@@ -214,6 +457,26 @@ def build_schedule_item(pair_data: Dict[str, Any], prod_id: str, platform: str =
         "last_run": last_run_str,
         "timezone": "Asia/Ho_Chi_Minh",
         "scope": inst_meta["scope"]
+    }
+
+@router.get("/numbering-registry")
+def get_numbering_registry():
+    """
+    Exposes the dynamic auto-numbering registry for trading pairs and products.
+    Follows structure: [D1: pair_id][D2: platform(1/0)][D3: product_id][D4: random 0-9]
+    """
+    pairs_map = auto_numbering_engine.get_registered_pairs_map()
+    return {
+        "status": "success",
+        "convention": "4-digit enterprise ID: [D1: pair_id][D2: platform(1/0)][D3: product_id][D4: random 0-9]",
+        "registered_pairs": pairs_map,
+        "registered_products": auto_numbering_engine.dynamic_products,
+        "samples": {
+            "BTCUSDT_klines_API": auto_numbering_engine.generate_id("BTCUSDT", "klines", "API"),
+            "ETHUSDT_aggtrade_WSIS": auto_numbering_engine.generate_id("ETHUSDT", "aggtrade", "WSIS"),
+            "SOLUSDT_klines_API": auto_numbering_engine.generate_id("SOLUSDT", "klines", "API"),
+            "BTCUSDT_funding_rate_API": auto_numbering_engine.generate_id("BTCUSDT", "funding_rate", "API")
+        }
     }
 
 @router.get("")
@@ -350,14 +613,67 @@ def list_pipeline_traces(
     - Seller (Symbol), Company, Product, Platform Instance (API / WSIS), Input Day, Stage, Collect Status, Collect Start, Transform Status, Pipeline Status.
     - Subtasks: Which task is Done, Running, Queued, or Failed.
     """
+    schedule_id_str = schedule_id if isinstance(schedule_id, str) else None
+    symbol_str = symbol if isinstance(symbol, str) else None
+    product_str = product if isinstance(product, str) else None
+    platform_str = platform if isinstance(platform, str) else None
+    status_str = status if isinstance(status, str) else None
+    date_from_str = date_from if isinstance(date_from, str) else None
+    date_to_str = date_to if isinstance(date_to, str) else None
+    try:
+        limit_val = int(limit) if not hasattr(limit, "default") else 35
+    except Exception:
+        limit_val = 35
+
     dag_id = "04_binance_market_metrics_15m_dag"
-    dag_runs = airflow_connector.get_dag_runs(dag_id, limit=25)
+    dag_runs = airflow_connector.get_dag_runs(dag_id, limit=25) or []
+    for r in dag_runs:
+        r["dag_id"] = dag_id
+
+    try:
+        klines_runs = airflow_connector.get_dag_runs("01_binance_klines_etl_dag", limit=50) or []
+        for r in klines_runs:
+            r["dag_id"] = "01_binance_klines_etl_dag"
+        ai_runs = airflow_connector.get_dag_runs("05_ai_models_hourly_inference_dag", limit=25) or []
+        for r in ai_runs:
+            r["dag_id"] = "05_ai_models_hourly_inference_dag"
+
+        all_runs = dag_runs + klines_runs + ai_runs
+        
+        def _get_run_dt(r):
+            for k in ("start_date", "execution_date", "logical_date", "data_interval_start"):
+                val = r.get(k)
+                if val:
+                    try:
+                        return datetime.fromisoformat(val.replace("Z", "+00:00"))
+                    except Exception:
+                        pass
+            return datetime.min.replace(tzinfo=timezone.utc)
+
+        all_runs.sort(key=_get_run_dt, reverse=True)
+
+        if product_str and product_str.lower() != "all":
+            prod_l = product_str.lower()
+            if prod_l == "klines":
+                all_runs = [r for r in all_runs if r.get("dag_id") == "01_binance_klines_etl_dag"]
+            elif prod_l in ("aggtrade", "depth", "liquidations"):
+                all_runs = [r for r in all_runs if r.get("dag_id") == "04_binance_market_metrics_15m_dag"]
+            elif prod_l == "ai_inference":
+                all_runs = [r for r in all_runs if r.get("dag_id") == "05_ai_models_hourly_inference_dag"]
+
+        failed_runs = [r for r in all_runs if r.get("state") == "failed"]
+        if status_str and status_str.lower() == "failed":
+            dag_runs = failed_runs
+        else:
+            dag_runs = failed_runs + [r for r in all_runs if r.get("state") != "failed"]
+    except Exception as e:
+        logger.warning(f"Failed to fetch auxiliary DAG runs: {e}")
     now = get_now_gmt7()
 
     target_schedules = []
     platforms = ["API", "WSIS"]
-    if platform and platform.lower() != "all":
-        p_up = platform.upper()
+    if platform_str and platform_str.lower() != "all":
+        p_up = platform_str.upper()
         if "API" in p_up or "AIRFLOW" in p_up or "SYS" in p_up:
             platforms = ["API"]
         elif "WSIS" in p_up or "WEBSOCKET" in p_up:
@@ -370,12 +686,13 @@ def list_pipeline_traces(
             for p in settings.PRODUCTS:
                 sid = f"SCH_{s}_{p['id'].upper()}_{plat}"
                 sid_legacy = f"SCH_{s}_{p['id'].upper()}"
-                if schedule_id and schedule_id != "all":
-                    if sid != schedule_id and sid_legacy != schedule_id:
+                if schedule_id_str and schedule_id_str != "all":
+                    sched_upper = schedule_id_str.upper()
+                    if sid != schedule_id_str and sid_legacy != schedule_id_str and s.upper() != sched_upper and sched_upper not in sid:
                         continue
-                if symbol and symbol != "all" and s.upper() != symbol.upper():
+                if symbol_str and symbol_str != "all" and s.upper() != symbol_str.upper():
                     continue
-                if product and product != "all" and p["id"].lower() != product.lower():
+                if product_str and product_str != "all" and p["id"].lower() != product_str.lower():
                     continue
                 target_schedules.append((s, p["id"], sid, plat))
 
@@ -394,11 +711,18 @@ def list_pipeline_traces(
         return "Done"
 
     if dag_runs:
-        for run_idx, run in enumerate(dag_runs[:limit]):
+        for run_idx, run in enumerate(dag_runs[:limit_val]):
             run_id = run.get("dag_run_id", f"run_{run_idx}")
+            clean_run = "".join(c if c.isalnum() else "_" for c in str(run_id))
             state = run.get("state") or "success"
             pipe_status = map_status(state)
-            exec_date = run.get("execution_date") or run.get("logical_date")
+            exec_date = (
+                run.get("execution_date") or 
+                run.get("logical_date") or 
+                run.get("data_interval_start") or 
+                run.get("run_after") or 
+                run.get("start_date")
+            )
             
             if exec_date:
                 try:
@@ -424,7 +748,33 @@ def list_pipeline_traces(
                 except Exception:
                     collect_start = start_date_str
             else:
-                collect_start = f"{input_day_str.split(',')[0]}, 7:31:03 AM"
+                collect_start = now.strftime("%m/%d/%Y, %I:%M:%S %p")
+
+            start_time_iso = collect_start
+
+            # Calculate duration for this DAG run
+            raw_dur = run.get("duration")
+            if raw_dur is not None:
+                dag_dur_sec = float(raw_dur)
+            elif sdt:
+                if state == "running":
+                    now_utc = datetime.now(timezone.utc)
+                    try:
+                        start_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+                        dag_dur_sec = max(0.0, (now_utc - start_utc).total_seconds())
+                    except Exception:
+                        dag_dur_sec = 0.0
+                elif run.get("end_date"):
+                    try:
+                        start_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+                        end_utc = datetime.fromisoformat(run["end_date"].replace("Z", "+00:00"))
+                        dag_dur_sec = max(0.0, (end_utc - start_utc).total_seconds())
+                    except Exception:
+                        dag_dur_sec = 38.0
+                else:
+                    dag_dur_sec = 38.0
+            else:
+                dag_dur_sec = 38.0
 
             # Compute day_timestamp: day and timestamp connected seamlessly (e.g. 20260919015610)
             if sdt:
@@ -436,12 +786,14 @@ def list_pipeline_traces(
 
             # Fast retrieval of task instances: cache completed runs, always poll running runs
             live_tis = []
+            cur_dag = run.get("dag_id") or dag_id
+            live_tis = []
             if state == "running":
-                live_tis = airflow_connector.get_task_instances(dag_id, run_id)
+                live_tis = airflow_connector.get_task_instances(cur_dag, run_id)
             elif run_id in _TASK_INSTANCES_CACHE:
                 live_tis = _TASK_INSTANCES_CACHE[run_id]
-            elif run_idx < 4:
-                live_tis = airflow_connector.get_task_instances(dag_id, run_id)
+            elif run_idx < 8:
+                live_tis = airflow_connector.get_task_instances(cur_dag, run_id)
                 if state in ("success", "failed"):
                     _TASK_INSTANCES_CACHE[run_id] = live_tis
             else:
@@ -449,28 +801,59 @@ def list_pipeline_traces(
 
             ti_map = {t.get("task_id"): t for t in live_tis}
 
-            for sym, pid, sid, plat in target_schedules:
+            if cur_dag == "01_binance_klines_etl_dag":
+                applicable_schedules = [
+                    (s, pid, sid, plat) for s, pid, sid, plat in target_schedules
+                    if pid == "klines" and plat == "API"
+                ]
+            elif cur_dag == "04_binance_market_metrics_15m_dag":
+                applicable_schedules = [
+                    (s, pid, sid, plat) for s, pid, sid, plat in target_schedules
+                    if pid in ("aggtrade", "depth", "liquidations") and plat == "API"
+                ]
+            elif cur_dag == "05_ai_models_hourly_inference_dag":
+                for s in ("BTCUSDT", "ETHUSDT"):
+                    if schedule_id_str and schedule_id_str != "all" and schedule_id_str.upper() != s and schedule_id_str.upper() not in f"SCH_{s}_AI_INFERENCE_API":
+                        continue
+                    if not symbol_str or symbol_str.upper() in ("ALL", s):
+                        applicable_schedules.append((s, "ai_inference", f"SCH_{s}_AI_INFERENCE_API", "API"))
+            elif cur_dag == "02_ml_model_retrain_dag":
+                applicable_schedules = [("BTCUSDT", "ml_retrain", "SCH_BTCUSDT_ML_RETRAIN_API", "API")]
+            else:
+                applicable_schedules = target_schedules
+
+            for sym, pid, sid, plat in applicable_schedules:
                 sym_meta = SYMBOL_META.get(sym, {"name": sym, "market": "BINANCE_GLOBAL", "type": "CRYPTO"})
-                p_meta = PRODUCT_META.get(pid, {"code": pid, "name": pid})
+                p_meta = PRODUCT_META.get(pid, {"code": pid.upper(), "name": pid})
                 is_supported = not (sym_meta["type"] == "EQUITY" and pid == "liquidations")
                 
                 cur_pipe_status = pipe_status if is_supported else "Skipped"
 
                 # Match real Airflow task instances
-                t1_ti = ti_map.get("extract_market_metrics") or ti_map.get("extract_bronze_data") or ti_map.get("extract_market_data")
-                t2_ti = ti_map.get("transform_market_metrics_silver") or ti_map.get("transform_silver_parquet") or ti_map.get("transform_gold_metrics")
-                t3_ti = ti_map.get("validate_data_quality_gate") or ti_map.get("validate_qc_rules")
-                t4_ti = ti_map.get("load_market_metrics_gold") or ti_map.get("load_gold_clickhouse")
+                if pid == "ai_inference":
+                    t1_ti = ti_map.get("check_clickhouse_freshness")
+                    t2_ti = ti_map.get("run_lstm_forecasting") or ti_map.get("run_anomaly_risk_guard")
+                    t3_ti = ti_map.get("run_fraud_batch_audit")
+                    t4_ti = ti_map.get("persist_inference_results_clickhouse")
+                else:
+                    t1_ti = (ti_map.get("prepare_parameters") or ti_map.get("extract_market_metrics") or 
+                             ti_map.get("extract_bronze_data") or ti_map.get("extract_market_data") or 
+                             ti_map.get("extract_binance_klines") or ti_map.get("extract_klines") or ti_map.get("extract_batch"))
+                    t2_ti = (ti_map.get("transform_market_metrics_silver") or ti_map.get("transform_silver_parquet") or 
+                             ti_map.get("transform_gold_metrics") or ti_map.get("transform_klines_silver") or
+                             ti_map.get("compute_indicators") or ti_map.get("run_inference"))
+                    t3_ti = ti_map.get("validate_data_quality_gate") or ti_map.get("validate_qc_rules")
+                    t4_ti = (ti_map.get("load_market_metrics_gold") or ti_map.get("load_gold_clickhouse") or
+                             ti_map.get("load_klines_gold") or ti_map.get("export_predictions"))
 
                 if not is_supported or cur_pipe_status == "Skipped":
                     t1_state = t2_state = t3_state = t4_state = "skipped"
-                elif t1_ti or t2_ti or t4_ti:
+                elif t1_ti or t2_ti or t4_ti or t3_ti:
                     t1_state = (t1_ti.get("state") if t1_ti else None) or "enqueued"
                     t2_state = (t2_ti.get("state") if t2_ti else None) or "enqueued"
                     if t3_ti:
                         t3_state = t3_ti.get("state") or "enqueued"
                     else:
-                        # If no standalone QC task in DAG (e.g. DAG 04), QC follows transform
                         if t2_state == "success":
                             t3_state = "success"
                         elif t2_state == "running":
@@ -478,11 +861,16 @@ def list_pipeline_traces(
                         else:
                             t3_state = t2_state
                     t4_state = (t4_ti.get("state") if t4_ti else None) or "enqueued"
+                    if cur_pipe_status == "Failed" and t1_state != "failed" and t2_state != "failed" and t4_state != "failed":
+                        t1_state = "failed"
                 else:
                     if cur_pipe_status == "Done":
                         t1_state = t2_state = t3_state = t4_state = "success"
                     elif cur_pipe_status == "Running":
                         t1_state = "running"
+                        t2_state = t3_state = t4_state = "enqueued"
+                    elif cur_pipe_status == "Failed":
+                        t1_state = "failed"
                         t2_state = t3_state = t4_state = "enqueued"
                     else:
                         t1_state = t2_state = t3_state = t4_state = "enqueued"
@@ -577,7 +965,14 @@ def list_pipeline_traces(
                 t3_files = qc_files if t3_state == "success" else []
                 t4_files = [] # ClickHouse load writes directly to ClickHouse OLAP storage (0 files)
 
-                if plat == "WSIS":
+                if pid == "ai_inference":
+                    subtasks = [
+                        subtask_info(f"check_freshness_{sym.lower()}", "Check ClickHouse Gold Data Freshness", t1_state, "Collect", 0.5, "Gold Feature Store", [], t1_ti),
+                        subtask_info(f"run_forecasting_{sym.lower()}", "LSTM 15m/60m Price & Anomaly Forecasting", t2_state, "Transform", 3.2, "Neural Net Weights", [], t2_ti),
+                        subtask_info(f"run_fraud_audit_{sym.lower()}", "Batch Microstructure Fraud & Risk Audit", t3_state, "QC", 0.8, "Risk Scores", [], t3_ti),
+                        subtask_info(f"persist_clickhouse_{sym.lower()}", "Ingest AI Inference Results into ClickHouse", t4_state, "Load", 1.1, "ai_hourly_inference_results", [], t4_ti)
+                    ]
+                elif plat == "WSIS":
                     subtasks = [
                         subtask_info(f"wsis_stream_{pid}_{sym.lower()}", f"Collect & Stream {pid.upper()} from WebSocket", t1_state, "Collect", 1.2, bronze_path, t1_files, t1_ti),
                         subtask_info(f"wsis_tumbling_{pid}", f"Buffer & 15M Tumbling Window Aggregator", t2_state, "Transform", 0.9, f"WSIS Stream DataFrame ({ch_rows})", t2_files, t2_ti),
@@ -601,6 +996,11 @@ def list_pipeline_traces(
                         st["upload_paths"] = []
                     collect_st = "Skipped"
                     transform_st = "Skipped (0)"
+                    stage_segments = ["skipped", "skipped", "skipped"]
+                    stage_label = "skipped (not in scope)"
+                    stage_name = "Skipped"
+                    prod_dur_sec = 0.0
+                    formatted_dur = "--"
                 else:
                     # Dynamically set upload_paths based on each task's actual status
                     subtasks[0]["upload_paths"] = extract_files if subtasks[0]["status"] in ("DONE", "RUNNING") else []
@@ -611,43 +1011,104 @@ def list_pipeline_traces(
                     collect_st = "Done" if subtasks[0]["status"] == "DONE" else ("Running" if subtasks[0]["status"] == "RUNNING" else "Queued")
                     transform_st = "All done (1)" if subtasks[1]["status"] == "DONE" else ("Running (1)" if subtasks[1]["status"] == "RUNNING" else "Queued (1)")
 
-                clean_run = run_id.replace("scheduled__", "").replace("manual__", "").replace(":", "").replace("-", "").replace("+", "").replace(".", "_")
+                    # Determine 3-segment stage progress and status label matching user company UI
+                    if cur_pipe_status == "Failed":
+                        if t1_state == "failed":
+                            stage_segments = ["pending", "failed", "pending"]
+                            stage_label = "failed at collect"
+                            stage_name = "Collect"
+                        elif t2_state == "failed":
+                            stage_segments = ["pending", "success", "failed"]
+                            stage_label = "failed at transform"
+                            stage_name = "Transform"
+                        elif t4_state == "failed":
+                            stage_segments = ["pending", "success", "failed"]
+                            stage_label = "failed at load"
+                            stage_name = "Load"
+                        else:
+                            stage_segments = ["pending", "failed", "pending"]
+                            stage_label = "failed at collect"
+                            stage_name = "Collect"
+                        prod_dur_sec = dag_dur_sec
+                        formatted_dur = format_duration(prod_dur_sec)
+                    elif cur_pipe_status == "Running":
+                        if t1_state == "running":
+                            stage_segments = ["pending", "running", "pending"]
+                            stage_label = "collecting at collect"
+                            stage_name = "Collect"
+                        elif t2_state == "running":
+                            stage_segments = ["pending", "success", "running"]
+                            stage_label = "running at transform"
+                            stage_name = "Transform"
+                        elif t4_state == "running":
+                            stage_segments = ["pending", "success", "running"]
+                            stage_label = "running at load"
+                            stage_name = "Load"
+                        else:
+                            stage_segments = ["pending", "running", "pending"]
+                            stage_label = "collecting at collect"
+                            stage_name = "Collect"
+                        prod_dur_sec = dag_dur_sec
+                        formatted_dur = format_duration(prod_dur_sec)
+                    else: # Done / Success
+                        stage_segments = ["pending", "success", "success"]
+                        stage_label = "done 1 transform"
+                        stage_name = "Collect"
+                        ti_dur_sum = 0.0
+                        ti_has_dur = False
+                        for ti in [t1_ti, t2_ti, t3_ti, t4_ti]:
+                            if ti and ti.get("duration") is not None:
+                                ti_dur_sum += float(ti.get("duration") or 0)
+                                ti_has_dur = True
+                        prod_dur_sec = ti_dur_sum if ti_has_dur and ti_dur_sum > 0 else dag_dur_sec
+                        formatted_dur = format_duration(prod_dur_sec)
+
+                num_id = get_schedule_numeric_id(sym, pid, plat)
                 item = {
                     "id": f"TRC_{clean_run}_{sym}_{pid}_{plat}",
+                    "numeric_id": num_id,
+                    "display_id": str(num_id),
                     "dag_run_id": run_id,
                     "schedule_id": sid,
                     "seller": sym,
                     "seller_name": sym_meta["name"],
                     "company": "BINANCE_WSIS" if plat == "WSIS" else sym_meta["market"],
+                    "instance": "BINANCE_WSIS" if plat == "WSIS" else sym_meta["market"],
                     "product": p_meta["code"],
                     "product_id": pid,
                     "platform_instance": plat,
-                    "input_day": input_day_str,
+                    "input_day": date_iso,
+                    "input_day_full": input_day_str,
                     "input_date": date_iso,
-                    "stage": "Collect",
+                    "stage": stage_name,
+                    "stage_label": stage_label,
+                    "stage_segments": stage_segments,
+                    "duration": formatted_dur,
+                    "duration_sec": prod_dur_sec,
+                    "start_time": start_time_iso,
                     "collect_status": collect_st,
-                    "collect_start": collect_start,
+                    "collect_start": start_time_iso,
                     "transform_status": transform_st,
                     "pipeline_status": cur_pipe_status,
                     "supported": is_supported,
                     "subtasks": subtasks
                 }
 
-                if status and status != "all":
-                    if cur_pipe_status.lower() != status.lower():
+                if status_str and status_str != "all":
+                    if cur_pipe_status.lower() != status_str.lower():
                         continue
-                if date_from and date_iso < date_from:
+                if date_from_str and date_iso < date_from_str:
                     continue
-                if date_to and date_iso > date_to:
+                if date_to_str and date_iso > date_to_str:
                     continue
 
                 results.append(item)
-                if len(results) >= limit:
+                if len(results) >= limit_val:
                     break
-            if len(results) >= limit:
+            if len(results) >= limit_val:
                 break
     else:
-        for day_offset in range(min(limit, 8)):
+        for day_offset in range(min(limit_val, 8)):
             dt = now - timedelta(days=day_offset, hours=day_offset % 3, minutes=15 * (day_offset % 4))
             input_day_str = dt.strftime("%m/%d/%Y, %I:%M %p")
             date_iso = dt.strftime("%Y-%m-%d")
@@ -778,39 +1239,58 @@ def list_pipeline_traces(
                     fallback_pipe_status = "Skipped"
                     fallback_collect_status = "Skipped"
                     fallback_transform_status = "Skipped (0)"
+                    fallback_segments = ["skipped", "skipped", "skipped"]
+                    fallback_stage_label = "skipped (not in scope)"
+                    fallback_dur = "--"
+                    fallback_dur_sec = 0.0
                 else:
                     fallback_pipe_status = "Done"
                     fallback_collect_status = "Done"
                     fallback_transform_status = "All done (1)"
+                    fallback_segments = ["pending", "success", "success"]
+                    fallback_stage_label = "done 1 transform"
+                    fallback_dur_sec = 35.0 + (day_offset * 12.0)
+                    fallback_dur = format_duration(fallback_dur_sec)
 
+                fallback_start = dt.strftime("%m/%d/%Y, %I:%M:%S %p")
+                num_id = get_schedule_numeric_id(sym, pid, plat)
                 item = {
                     "id": f"TRC_MAN_{date_iso.replace('-', '')}_{sym}_{pid}_{plat}",
+                    "numeric_id": num_id,
+                    "display_id": str(num_id),
                     "dag_run_id": f"manual__{date_iso}T{slot_str.replace(':', '')}00Z",
                     "schedule_id": sid,
                     "seller": sym,
                     "seller_name": sym_meta["name"],
                     "company": "BINANCE_WSIS" if plat == "WSIS" else sym_meta["market"],
+                    "instance": "BINANCE_WSIS" if plat == "WSIS" else sym_meta["market"],
                     "product": p_meta["code"],
                     "product_id": pid,
                     "platform_instance": plat,
-                    "input_day": input_day_str,
+                    "input_day": date_iso,
+                    "input_day_full": input_day_str,
                     "input_date": date_iso,
-                    "stage": "Collect",
+                    "stage": "Collect" if is_supported else "Skipped",
+                    "stage_label": fallback_stage_label,
+                    "stage_segments": fallback_segments,
+                    "duration": fallback_dur,
+                    "duration_sec": fallback_dur_sec,
+                    "start_time": fallback_start,
                     "collect_status": fallback_collect_status,
-                    "collect_start": collect_start,
+                    "collect_start": fallback_start,
                     "transform_status": fallback_transform_status,
                     "pipeline_status": fallback_pipe_status,
                     "supported": is_supported,
                     "subtasks": subtasks
                 }
 
-                if status and status != "all" and item["pipeline_status"].lower() != status.lower():
+                if status_str and status_str != "all" and item["pipeline_status"].lower() != status_str.lower():
                     continue
 
                 results.append(item)
-                if len(results) >= limit:
+                if len(results) >= limit_val:
                     break
-            if len(results) >= limit:
+            if len(results) >= limit_val:
                 break
 
     return {
@@ -959,6 +1439,13 @@ def get_schedule_traces(schedule_id: str, limit: int = 10):
 
 class SingleScheduleRerunRequest(BaseModel):
     reason: Optional[str] = "Operator manual single product schedule trace rerun"
+    empty_date: Optional[bool] = False
+    date_type: Optional[str] = "create"  # "create" | "update"
+    target_window: Optional[str] = "ALL_DAY"  # "ALL_DAY" or specific "HH:MM" window
+    selected_dates: Optional[List[str]] = []
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    secondary_collect: Optional[bool] = False
 
 def check_pipeline_permission(current_user: dict):
     role = current_user.get("role", "")
@@ -989,19 +1476,30 @@ def rerun_single_schedule(schedule_id: str, req: SingleScheduleRerunRequest, cur
         raise HTTPException(status_code=404, detail=f"Product {prod_id} not found")
 
     now = get_now_gmt7()
-    target_date = now.strftime("%Y-%m-%d")
-    target_window = now.strftime("%H:%M")
-    run_key = f"{target_date.replace('-', '')}T{target_window.replace(':', '')}00Z"
+    target_date = None if req.empty_date else (req.selected_dates[0] if req.selected_dates else (req.start_date or now.strftime("%Y-%m-%d")))
+    target_window = req.target_window or "ALL_DAY"
+    if target_window == "now":
+        target_window = now.strftime("%H:%M")
+    date_part = target_date.replace('-', '') if target_date else "EMPTY"
+    window_part = target_window.replace(':', '') if target_window else "ALL"
+    run_key = f"{date_part}T{window_part}00Z"
 
     conf = {
-        "action": "rerun_slot",
+        "action": "run_collect_schedule" if (req.date_type or "create") == "create" else "rerun_slot",
         "run_key": run_key,
         "schedule_id": schedule_id,
         "target_date": target_date,
         "target_window": target_window,
+        "time_window": target_window,
+        "empty_date": bool(req.empty_date),
+        "date_type": req.date_type or "create",
+        "selected_dates": req.selected_dates if not req.empty_date else [],
+        "start_date": req.start_date if not req.empty_date else None,
+        "end_date": req.end_date if not req.empty_date else None,
+        "secondary_collect": bool(req.secondary_collect),
         "symbols": [symbol],
         "products": [prod_id],
-        "recollection": True,
+        "recollection": (req.date_type == "update"),
         "operator": operator,
         "operator_username": operator,
         "reason": req.reason
@@ -1010,16 +1508,37 @@ def rerun_single_schedule(schedule_id: str, req: SingleScheduleRerunRequest, cur
     dag_id = "04_binance_market_metrics_15m_dag"
     result = airflow_connector.trigger_dag_run(dag_id=dag_id, conf=conf)
 
+    secondary_result = None
+    if req.secondary_collect:
+        sec_conf = {
+            "action": "secondary_collect",
+            "trigger_source": "04_binance_market_metrics_15m_dag",
+            "schedule_id": schedule_id,
+            "target_date": target_date,
+            "time_window": target_window,
+            "symbols": [symbol],
+            "operator": operator
+        }
+        try:
+            secondary_result = airflow_connector.trigger_dag_run(dag_id="05_ai_models_hourly_inference_dag", conf=sec_conf)
+        except Exception as e:
+            secondary_result = {"status": "error", "detail": str(e)}
+
     append_audit_log({
         "operator": operator,
-        "action": "RERUN_SCHEDULE_TRACE",
+        "action": "RUN_COLLECT_SCHEDULE",
         "target_dag": dag_id,
         "run_key": run_key,
         "schedule_id": schedule_id,
-        "scope": f"{symbol} ({prod_id})",
+        "scope": f"{symbol} ({prod_id}) [{req.date_type or 'create'}] @ {target_window}",
         "symbols": [symbol],
         "products": [prod_id],
-        "reason": f"Schedule Trace Trigger: {schedule_id} - {req.reason}",
+        "empty_date": req.empty_date,
+        "date_type": req.date_type,
+        "target_window": target_window,
+        "reason": f"Collect Schedule Trigger: {schedule_id} - {req.reason}",
+        "secondary_collect": bool(req.secondary_collect),
+        "secondary_result": secondary_result,
         "airflow_dispatched": result.get("success", False),
         "airflow_response": result
     })
@@ -1029,12 +1548,24 @@ def rerun_single_schedule(schedule_id: str, req: SingleScheduleRerunRequest, cur
         "schedule_id": schedule_id,
         "symbol": symbol,
         "product": prod_id,
-        "airflow_trigger": result
+        "empty_date": req.empty_date,
+        "date_type": req.date_type,
+        "target_window": target_window,
+        "secondary_collect": req.secondary_collect,
+        "airflow_trigger": result,
+        "secondary_trigger": secondary_result
     }
 
 class BatchScheduleRerunRequest(BaseModel):
     schedule_ids: List[str]
     reason: Optional[str] = "Operator batch schedule rerun"
+    empty_date: Optional[bool] = False
+    date_type: Optional[str] = "create"  # "create" | "update"
+    target_window: Optional[str] = "ALL_DAY"  # "ALL_DAY" or specific "HH:MM" window
+    selected_dates: Optional[List[str]] = []
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    secondary_collect: Optional[bool] = False
 
 @router.post("/batch-rerun")
 def batch_rerun_schedules(req: BatchScheduleRerunRequest, current_user: dict = Depends(get_current_user)):
@@ -1064,19 +1595,30 @@ def batch_rerun_schedules(req: BatchScheduleRerunRequest, current_user: dict = D
         raise HTTPException(status_code=400, detail="No valid symbol-product combinations found in provided IDs")
 
     now = get_now_gmt7()
-    target_date = now.strftime("%Y-%m-%d")
-    target_window = now.strftime("%H:%M")
-    run_key = f"{target_date.replace('-', '')}T{target_window.replace(':', '')}00Z"
+    target_date = None if req.empty_date else (req.selected_dates[0] if req.selected_dates else (req.start_date or now.strftime("%Y-%m-%d")))
+    target_window = req.target_window or "ALL_DAY"
+    if target_window == "now":
+        target_window = now.strftime("%H:%M")
+    date_part = target_date.replace('-', '') if target_date else "EMPTY"
+    window_part = target_window.replace(':', '') if target_window else "ALL"
+    run_key = f"{date_part}T{window_part}00Z"
 
     conf = {
-        "action": "batch_rerun_schedules",
+        "action": "batch_run_collect_schedule" if (req.date_type or "create") == "create" else "batch_rerun_schedules",
         "run_key": run_key,
         "schedule_ids": req.schedule_ids,
         "target_date": target_date,
         "target_window": target_window,
+        "time_window": target_window,
+        "empty_date": bool(req.empty_date),
+        "date_type": req.date_type or "create",
+        "selected_dates": req.selected_dates if not req.empty_date else [],
+        "start_date": req.start_date if not req.empty_date else None,
+        "end_date": req.end_date if not req.empty_date else None,
+        "secondary_collect": bool(req.secondary_collect),
         "symbols": list(resolved_symbols),
         "products": list(resolved_products),
-        "recollection": True,
+        "recollection": (req.date_type == "update"),
         "operator": operator,
         "operator_username": operator,
         "reason": req.reason
@@ -1085,16 +1627,37 @@ def batch_rerun_schedules(req: BatchScheduleRerunRequest, current_user: dict = D
     dag_id = "04_binance_market_metrics_15m_dag"
     result = airflow_connector.trigger_dag_run(dag_id=dag_id, conf=conf)
 
+    secondary_result = None
+    if req.secondary_collect:
+        sec_conf = {
+            "action": "secondary_collect",
+            "trigger_source": "04_binance_market_metrics_15m_dag",
+            "schedule_ids": req.schedule_ids,
+            "target_date": target_date,
+            "time_window": target_window,
+            "symbols": list(resolved_symbols),
+            "operator": operator
+        }
+        try:
+            secondary_result = airflow_connector.trigger_dag_run(dag_id="05_ai_models_hourly_inference_dag", conf=sec_conf)
+        except Exception as e:
+            secondary_result = {"status": "error", "detail": str(e)}
+
     append_audit_log({
         "operator": operator,
-        "action": "BATCH_RERUN_SCHEDULES",
+        "action": "BATCH_RUN_COLLECT_SCHEDULE",
         "target_dag": dag_id,
         "run_key": run_key,
-        "scope": f"{len(req.schedule_ids)} Schedules ({len(resolved_symbols)} Symbols, {len(resolved_products)} Prods)",
+        "scope": f"{len(req.schedule_ids)} Schedules ({len(resolved_symbols)} Symbols, {len(resolved_products)} Prods) [{req.date_type or 'create'}] @ {target_window}",
         "symbols": list(resolved_symbols),
         "products": list(resolved_products),
         "target_schedules": req.schedule_ids,
-        "reason": f"Batch Rerun ({len(req.schedule_ids)} schedules) - {req.reason}",
+        "empty_date": req.empty_date,
+        "date_type": req.date_type,
+        "target_window": target_window,
+        "reason": f"Batch Collect Trigger ({len(req.schedule_ids)} schedules) - {req.reason}",
+        "secondary_collect": bool(req.secondary_collect),
+        "secondary_result": secondary_result,
         "airflow_dispatched": result.get("success", False),
         "airflow_response": result
     })
@@ -1104,7 +1667,12 @@ def batch_rerun_schedules(req: BatchScheduleRerunRequest, current_user: dict = D
         "total_schedules": len(req.schedule_ids),
         "symbols": list(resolved_symbols),
         "products": list(resolved_products),
-        "airflow_trigger": result
+        "empty_date": req.empty_date,
+        "date_type": req.date_type,
+        "target_window": target_window,
+        "secondary_collect": req.secondary_collect,
+        "airflow_trigger": result,
+        "secondary_trigger": secondary_result
     }
 
 class BatchToggleActiveRequest(BaseModel):
@@ -1247,13 +1815,84 @@ def get_pipeline_details(trace_id: str, symbol: Optional[str] = "BTCUSDT", produ
             ]
         }
 
-    now = get_now_gmt7()
-    day_timestamp = now.strftime("%Y%m%d%H%M%S")
+    # Dynamic Timestamp: Parse base datetime from trace_id (Airflow run_id, run_key, or ISO string)
+    import re
+    base_dt = None
+    clean_trace = trace_id.strip("#")
+    m_iso = re.search(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})", clean_trace)
+    if m_iso:
+        y, mo, d, h, mi, s = map(int, m_iso.groups())
+        base_dt = datetime(y, mo, d, h, mi, s)
+    else:
+        m_compact = re.search(r"(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})", clean_trace)
+        if m_compact:
+            y, mo, d, h, mi, s = map(int, m_compact.groups())
+            base_dt = datetime(y, mo, d, h, mi, s)
+        else:
+            base_dt = get_now_gmt7().replace(tzinfo=None)
+
+    # Check Airflow for real task instances if trace_id is an Airflow run_id
+    actual_tis = {}
+    matched_dag_id = dag_id
+    for candidate_dag in ["04_binance_market_metrics_15m_dag", "01_binance_klines_etl_dag"]:
+        try:
+            tis = airflow_connector.get_task_instances(candidate_dag, clean_trace)
+            if tis:
+                matched_dag_id = candidate_dag
+                for ti in tis:
+                    actual_tis[ti.get("task_id")] = ti
+                break
+        except Exception:
+            pass
+
+    dag_id = matched_dag_id
+    encoded_run = urllib.parse.quote(clean_trace) if clean_trace else ""
+
+    # Determine status from actual Airflow task instances if available
+    collect_ti = actual_tis.get(collect_task_id) or actual_tis.get("extract_market_metrics") or actual_tis.get("extract_bronze_data")
+    transform_ti = actual_tis.get(transform_task_id) or actual_tis.get("transform_market_metrics_silver") or actual_tis.get("transform_silver_parquet")
+
+    collect_status = "Done"
+    collect_err = "N/A"
+    collect_done_event = "TASK_DONE"
+    if collect_ti:
+        ti_state = (collect_ti.get("state") or "success").lower()
+        if ti_state in ["failed"]:
+            collect_status = "Failed"
+            collect_done_event = "TASK_FAILED"
+            collect_err = "Binance API or Ingestion Failure (HTTP 500 / Network Timeout)"
+        elif ti_state in ["running"]:
+            collect_status = "Running"
+            collect_done_event = "TASK_RUNNING"
+        elif ti_state in ["queued"]:
+            collect_status = "Queued"
+            collect_done_event = "TASK_QUEUED"
+
+    transform_status = "Done" if collect_status == "Done" else "Upstream Failed"
+    transform_done_event = "TASK_DONE" if collect_status == "Done" else "UPSTREAM_FAILED"
+    transform_err = "N/A" if collect_status == "Done" else "Task skipped due to upstream extract failure"
+    if transform_ti and collect_status == "Done":
+        ti_state = (transform_ti.get("state") or "success").lower()
+        if ti_state in ["failed"]:
+            transform_status = "Failed"
+            transform_done_event = "TASK_FAILED"
+            transform_err = "Data quality gate or transformation assertion failed"
+
+    # Compute realistic timeline based on base_dt
+    t_collect_created = base_dt
+    t_collect_start = base_dt + timedelta(seconds=2)
+    t_collect_done = base_dt + timedelta(seconds=28)
+
+    t_trans_enqueued = t_collect_done
+    t_trans_start = t_collect_done + timedelta(seconds=2)
+    t_trans_done = t_trans_start + timedelta(seconds=22)
+
+    fmt_dt = "%Y-%m-%d %H:%M:%S"
+    day_timestamp = t_collect_done.strftime("%Y%m%d%H%M%S")
     json_filename = f"{sym}_{prod}_{plat}_{day_timestamp}.json"
-    gold_parquet_filename = f"{sym}_{prod}_{plat}_gold_{day_timestamp}.parquet"
+    gold_parquet_filename = f"{sym}_{prod}_{plat}_gold_{t_trans_done.strftime('%Y%m%d%H%M%S')}.parquet"
     prefix = "wsis/" if plat == "WSIS" else ""
 
-    # Exact files: 1 file json has title "global json" and TradingPair_Product_day_timestamp.json
     collect_files = [
         {
             "name": "global json",
@@ -1280,28 +1919,28 @@ def get_pipeline_details(trace_id: str, symbol: Optional[str] = "BTCUSDT", produ
     transform_direct_url = f"http://localhost:8085/dags/{dag_id}/grid?dag_run_id={encoded_run}&task_id={transform_task_id}&tab=logs"
 
     return {
-        "trace_id": trace_id,
+        "trace_id": clean_trace,
         "symbol": sym,
         "product": prod,
         "stages": [
             {
                 "stage_id": "collect",
                 "stage_name": "COLLECT Stage",
-                "status": "Done",
-                "created": "9/18/2026, 7:31:03 AM",
-                "updated": "9/18/2026, 1:40:00 PM",
+                "status": collect_status,
+                "created": t_collect_created.strftime(fmt_dt),
+                "updated": t_collect_done.strftime(fmt_dt),
                 "events": [
                     {
-                        "event_type": "TASK_DONE",
+                        "event_type": collect_done_event,
                         "task": collect_task_id,
                         "presence": "N/A",
                         "user": "API/WSIS system",
-                        "upload_paths": collect_files,
+                        "upload_paths": collect_files if collect_status == "Done" else [],
                         "dag_run_url": collect_direct_url,
-                        "error": "N/A",
+                        "error": collect_err,
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 13:40:00"
+                        "created": t_collect_done.strftime(fmt_dt)
                     },
                     {
                         "event_type": "TASK_STARTED",
@@ -1313,7 +1952,7 @@ def get_pipeline_details(trace_id: str, symbol: Optional[str] = "BTCUSDT", produ
                         "error": "N/A",
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 13:39:05"
+                        "created": t_collect_start.strftime(fmt_dt)
                     },
                     {
                         "event_type": "TASK_CREATED",
@@ -1325,49 +1964,52 @@ def get_pipeline_details(trace_id: str, symbol: Optional[str] = "BTCUSDT", produ
                         "error": "N/A",
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 07:31:03"
+                        "created": t_collect_created.strftime(fmt_dt)
                     }
                 ]
             },
             {
                 "stage_id": "transform",
                 "stage_name": "TRANSFORM Stage (1 task)",
-                "status": "Done",
-                "created": "9/18/2026, 1:40:00 PM",
-                "updated": "9/18/2026, 1:40:22 PM",
+                "status": transform_status,
+                "created": t_trans_enqueued.strftime(fmt_dt),
+                "updated": t_trans_done.strftime(fmt_dt),
                 "events": [
                     {
-                        "event_type": "TASK_DONE",
+                        "event_type": transform_done_event,
                         "task": transform_task_id,
+                        "presence": "N/A",
                         "user": "N/A",
-                        "upload_paths": transform_files,
+                        "upload_paths": transform_files if transform_status == "Done" else [],
                         "dag_run_url": transform_direct_url,
-                        "error": "N/A",
+                        "error": transform_err,
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 13:40:22"
+                        "created": t_trans_done.strftime(fmt_dt)
                     },
                     {
                         "event_type": "TASK_STARTED",
                         "task": transform_task_id,
+                        "presence": "5361594",
                         "user": "N/A",
-                        "upload_paths": transform_files,
+                        "upload_paths": [],
                         "dag_run_url": transform_direct_url,
                         "error": "N/A",
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 13:40:13"
+                        "created": t_trans_start.strftime(fmt_dt)
                     },
                     {
                         "event_type": "TASK_ENQUEUED",
-                        "task": "5361594",
+                        "task": transform_task_id,
+                        "presence": "5361594",
                         "user": "N/A",
                         "upload_paths": [],
                         "dag_run_url": None,
                         "error": "N/A",
                         "message": "N/A",
                         "page_details": "N/A",
-                        "created": "2026-09-18 13:40:00"
+                        "created": t_trans_enqueued.strftime(fmt_dt)
                     }
                 ]
             }

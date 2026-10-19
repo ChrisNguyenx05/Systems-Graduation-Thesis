@@ -66,6 +66,12 @@ PERMISSIONS_CATALOG = [
         "description": "Inspect user action logs, system mutations, and administrative event history."
     },
     {
+        "key": "view_system_links",
+        "name": "Cross-System Portals & External Links Directory",
+        "category": "Security",
+        "description": "Store, access, and direct-navigate to internal/external systems across the enterprise ecosystem."
+    },
+    {
         "key": "view_raw_urls",
         "name": "Sensitive Network & Stream URLs",
         "category": "Security",
@@ -136,7 +142,7 @@ DEFAULT_SYSTEM_ROLES = [
         "icon": "fa-database text-blue-500",
         "default_permissions": [
             "view_matrix", "trigger_pipeline", "manage_trading_pairs", "manage_catalog",
-            "view_lakehouse", "manage_stream", "view_audit", "view_raw_urls", "view_db_architecture",
+            "view_lakehouse", "manage_stream", "view_audit", "view_system_links", "view_raw_urls", "view_db_architecture",
             "export_lakehouse_data", "manage_system_alerts", "inspect_reconciliation_details",
             "view_ai_models", "trigger_ai_inference", "manage_ai_governance"
         ],

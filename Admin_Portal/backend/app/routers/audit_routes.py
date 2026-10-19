@@ -131,3 +131,23 @@ def get_audit_airflow_status(audit_id: str, current_user: dict = Depends(get_cur
         "audit_entry": target_log,
         "live_details": live_details
     }
+
+@router.post("/log-external-visit")
+def log_external_visit(body: Dict[str, Any], current_user: dict = Depends(get_current_user)):
+    system_code = body.get("system_code", "UNKNOWN")
+    system_name = body.get("system_name", "External System")
+    target_url = body.get("target_url", "")
+    operator = current_user.get("sub", "Unknown Operator")
+    entry = {
+        "operator": operator,
+        "action": "NAVIGATE_SYSTEM_LINK",
+        "target_dag": system_code,
+        "run_key": system_code,
+        "scope": f"External Link: {system_name}",
+        "reason": f"Security & Auditing: Operator accessed external system portal [{system_name}] ({target_url})",
+        "airflow_dispatched": False,
+        "is_automated": False
+    }
+    append_audit_log(entry)
+    return {"status": "success", "entry": entry}
+

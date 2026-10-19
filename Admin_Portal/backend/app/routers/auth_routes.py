@@ -51,7 +51,7 @@ def login(req: LoginRequest):
     role = "Super Admin" if is_admin else "Operator"
     all_perms = [
         "view_matrix", "trigger_pipeline", "manage_trading_pairs",
-        "manage_catalog", "manage_profiles", "view_lakehouse", "manage_stream", "view_audit"
+        "manage_catalog", "manage_profiles", "view_lakehouse", "manage_stream", "view_audit", "view_system_links"
     ]
     permissions = all_perms if is_admin else ["view_matrix", "trigger_pipeline", "view_lakehouse", "view_audit"]
     token = create_access_token(req.username, role=role, permissions=permissions)
