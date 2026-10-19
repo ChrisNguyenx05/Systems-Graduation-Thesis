@@ -4,7 +4,7 @@ services:
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   minio_s3:
-    image: elestio/minio:latest
+    image: minio/minio:latest
     container_name: minio_s3
     restart: always
     networks:
@@ -22,29 +22,46 @@ services:
     volumes:
       - ./data/minio:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   # ---------------------------------------------------------------------------
+  # MinIO Branded UI Proxy (Nginx Reverse Proxy - Theme & Logo Injection)
+  # Port: 9091 (Non-intrusive, keeps Port 9000 & 9001 100% untouched)
+  # ---------------------------------------------------------------------------
+  minio_console_proxy:
+    image: nginx:alpine
+    container_name: minio_console_proxy
+    restart: always
+    ports:
+      - "127.0.0.1:9091:9091"
+    volumes:
+      - ./config/minio_theme/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/minio_theme/custom_minio_theme.css:/etc/nginx/theme/custom_minio_theme.css:ro
+      - ./config/minio_theme/js:/etc/nginx/theme/js:ro
+    depends_on:
+      - minio_s3
+
+  # ---------------------------------------------------------------------------
   # MinIO Bucket Auto-Initialization Task
   # ---------------------------------------------------------------------------
   minio_init:
-    image: elestio/minio:latest
+    image: minio/mc:latest
     container_name: minio_init
     depends_on:
       minio_s3:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio_s3:9000 ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env} ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env};
-      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_BRONZE:-crypto-bronze};
-      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_SILVER:-crypto-silver};
-      /usr/bin/mc mb --ignore-existing myminio/${BUCKET_GOLD:-crypto-gold};
-      /usr/bin/mc anonymous set download myminio/${BUCKET_BRONZE:-crypto-bronze};
-      /usr/bin/mc anonymous set download myminio/${BUCKET_SILVER:-crypto-silver};
-      /usr/bin/mc anonymous set download myminio/${BUCKET_GOLD:-crypto-gold};
+      mc alias set myminio http://minio_s3:9000 ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env} ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env};
+      mc mb --ignore-existing myminio/${BUCKET_BRONZE:-crypto-bronze};
+      mc mb --ignore-existing myminio/${BUCKET_SILVER:-crypto-silver};
+      mc mb --ignore-existing myminio/${BUCKET_GOLD:-crypto-gold};
+      mc anonymous set download myminio/${BUCKET_BRONZE:-crypto-bronze};
+      mc anonymous set download myminio/${BUCKET_SILVER:-crypto-silver};
+      mc anonymous set download myminio/${BUCKET_GOLD:-crypto-gold};
       echo 'MinIO Medallion Buckets Initialized Successfully!';
       exit 0;
       "
@@ -54,7 +71,7 @@ services:
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   clickhouse_server:
-    image: clickhouse/clickhouse-server@sha256:f90a77560f72b10802106ee49e9870e41668cbc496e280c3911f6e3b216657f3
+    image: clickhouse/clickhouse-server:latest
     container_name: clickhouse_server
     restart: always
     ports:
@@ -68,6 +85,7 @@ services:
     volumes:
       - ./data/clickhouse:/var/lib/clickhouse
       - ./sql/init_clickhouse_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql
+      - ./config/clickhouse/disable_system_logs.xml:/etc/clickhouse-server/config.d/disable_system_logs.xml:ro
     ulimits:
       nofile:
         soft: 262144
@@ -94,8 +112,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+      - ./sql/03_init_postgres_medallion_layers.sql:/docker-entrypoint-initdb.d/03_init_postgres_medallion_layers.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env} -d ${POSTGRES_DB:?Set POSTGRES_DB in .env}"]
       interval: 5s
       timeout: 5s
       retries: 5
