@@ -4,7 +4,7 @@ services:
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   minio_s3:
-    image: quay.io/minio/minio:latest
+    image: clickhouse/minio-minio:latest
     container_name: minio_s3
     restart: always
     networks:
@@ -22,7 +22,7 @@ services:
     volumes:
       - ./data/minio:/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      test: ["CMD-SHELL", "(curl -f http://localhost:9000/minio/health/live || wget -q --spider http://localhost:9000/minio/health/live) || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -48,7 +48,7 @@ services:
   # MinIO Bucket Auto-Initialization Task
   # ---------------------------------------------------------------------------
   minio_init:
-    image: quay.io/minio/mc:latest
+    image: clickhouse/minio-mc:latest
     container_name: minio_init
     depends_on:
       minio_s3:
