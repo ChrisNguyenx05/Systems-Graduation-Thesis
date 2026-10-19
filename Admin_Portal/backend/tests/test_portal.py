@@ -55,18 +55,60 @@ class TestAdminPortal(unittest.TestCase):
         self.assertIn("/api/v1/wsis/refresh", openapi_paths)
 
     def test_wsis_status_tolerance_and_history(self):
+        from unittest.mock import patch
         from app.connectors.wsis import wsis_connector
-        res = wsis_connector.get_status(force=True)
-        self.assertIn("system_overall_match_rate", res)
-        self.assertIn("pair_reconciliation_matrix", res)
-        self.assertIn("historical_match_rates", res)
-        self.assertGreaterEqual(len(res["historical_match_rates"]), 1)
-        
-        # Verify BNBUSDT matched under tolerance
-        bnb = [p for p in res["pair_reconciliation_matrix"] if p["symbol"] == "BNBUSDT"]
-        self.assertTrue(len(bnb) > 0)
-        self.assertEqual(bnb[0]["status"], "MATCHED")
-        self.assertGreater(bnb[0]["klines_rate"], 99.0)
+
+        mock_history = [{
+            "id": "wsis_20261019_1200",
+            "window_start": "2026-10-19T12:00:00Z",
+            "date": "2026-10-19",
+            "time_window": "19:00 - 19:15 GMT+7",
+            "system_overall_match_rate": 100.0,
+            "klines_rate": 100.0,
+            "status": "SEALED (MinIO S3 Verified)"
+        }]
+
+        # BNBUSDT has small price difference within 0.10% tolerance (580.05 vs 580.00 -> 0.0086%)
+        mock_recon = {
+            "BNBUSDT": {
+                "matched": False,
+                "status": "MISMATCH",
+                "latency_ms": 110,
+                "ws_updates_in_window": 15,
+                "ws_close": 580.05,
+                "api_close": 580.00,
+                "api_trades": 120,
+            }
+        }
+
+        mock_klines = [{"symbol": "BNBUSDT", "cnt": 100, "last_close": 580.00}]
+        mock_agg = [{"symbol": "BNBUSDT", "cnt": 50}]
+        mock_depth = [{"symbol": "BNBUSDT", "cnt": 20, "last_imb": 0.01}]
+
+        def fake_ch_query(sql):
+            if "crypto_klines_gold" in sql:
+                return mock_klines
+            elif "crypto_agg_trades_gold" in sql:
+                return mock_agg
+            elif "crypto_order_book_depth_gold" in sql:
+                return mock_depth
+            return []
+
+        with patch.object(wsis_connector, "check_health", return_value={"online": True, "status": "HEALTHY"}), \
+             patch.object(wsis_connector, "_get_real_minio_history", return_value=mock_history), \
+             patch.object(wsis_connector, "_get_real_minio_reconciliation", return_value=mock_recon), \
+             patch("app.connectors.clickhouse.clickhouse_connector.query", side_effect=fake_ch_query):
+            res = wsis_connector.get_status(force=True)
+            self.assertIn("system_overall_match_rate", res)
+            self.assertIn("pair_reconciliation_matrix", res)
+            self.assertIn("historical_match_rates", res)
+            self.assertGreaterEqual(len(res["historical_match_rates"]), 1)
+
+            # Verify BNBUSDT matched under tolerance
+            bnb = [p for p in res["pair_reconciliation_matrix"] if p["symbol"] == "BNBUSDT"]
+            self.assertTrue(len(bnb) > 0)
+            self.assertEqual(bnb[0]["status"], "MATCHED")
+            self.assertGreater(bnb[0]["klines_rate"], 99.0)
 
 
 if __name__ == "__main__":

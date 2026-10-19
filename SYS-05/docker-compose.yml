@@ -4,7 +4,7 @@ services:
   # Credentials: admin123 / admin123
   # ---------------------------------------------------------------------------
   minio_s3:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: minio_s3
     restart: always
     networks:
@@ -48,7 +48,7 @@ services:
   # MinIO Bucket Auto-Initialization Task
   # ---------------------------------------------------------------------------
   minio_init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: minio_init
     depends_on:
       minio_s3:
