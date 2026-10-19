@@ -64,6 +64,8 @@ class ClickHouseConfig:
 class AlertConfig:
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
+    sys06_alert_url: str = os.getenv("SYS06_ALERT_URL", "http://sys-06-sys06-alert-dispatcher-v2-1:8080/alerts")
+    sys06_alert_token: str = os.getenv("SYS06_ALERT_API_TOKEN", "")
     sla_alert_enabled: bool = os.getenv("SLA_ALERT_ENABLED", "true").lower() == "true"
 
 class ConfigManager:

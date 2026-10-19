@@ -33,19 +33,19 @@ class LakehouseTaskOperator:
             raise RuntimeError(f"MinIO write failed for s3://{bucket}/{object_name}: {exc}") from exc
         return f"s3://{bucket}/{object_name}"
 
-    def write_bronze_klines(self, records: List[Dict[str, Any]], symbol: str, date_str: str) -> Dict[str, Any]:
+    def write_bronze_klines(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines") -> Dict[str, Any]:
         if not records:
             raise ValueError("Cannot write an empty Bronze batch")
-        path = self._write(self.bronze_bucket, f"klines/symbol={symbol}/date={date_str}/bronze.json", {"symbol": symbol, "source": "v1.0.0_api_klines", "records": records})
-        return {"status": "SUCCESS", "bronze_output_path": path, "records": records}
+        path = self._write(self.bronze_bucket, f"klines/symbol={symbol}/date={date_str}/bronze.json", {"symbol": symbol, "source": source, "records": records})
+        return {"status": "SUCCESS", "bronze_output_path": path, "records": records, "source": source}
 
-    def process_bronze_to_silver(self, records: List[Dict[str, Any]], symbol: str, date_str: str) -> Dict[str, Any]:
+    def process_bronze_to_silver(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines") -> Dict[str, Any]:
         if not records:
             raise ValueError("Cannot transform an empty Bronze batch")
         fields = ("symbol", "timestamp", "open", "high", "low", "close", "volume")
         cleaned = [{field: row[field] for field in fields} for row in records]
-        path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "source": "v1.0.0_api_klines", "records": cleaned})
-        return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned}
+        path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "source": source, "records": cleaned})
+        return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned, "source": source}
 
     def write_market_metrics(self, bucket, dataset, run_key, records):
         source_map = {

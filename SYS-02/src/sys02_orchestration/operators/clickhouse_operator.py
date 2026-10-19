@@ -38,12 +38,16 @@ class ClickHouseTaskOperator:
                 taker_buy_base_asset_volume Float64 DEFAULT 0,
                 taker_buy_quote_asset_volume Float64 DEFAULT 0,
                 sma_20 Float64 DEFAULT 0, rsi_14 Float64 DEFAULT 0,
+                source LowCardinality(String) DEFAULT 'v1.0.0_api_klines',
+                type_method LowCardinality(String) DEFAULT 'API',
                 collected_at DateTime64(3, 'UTC') DEFAULT now64(3),
                 updated_at DateTime DEFAULT now()
             ) ENGINE = ReplacingMergeTree(updated_at) ORDER BY (symbol, open_time)
         """)
+        self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS source LowCardinality(String) DEFAULT 'v1.0.0_api_klines'")
+        self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS type_method LowCardinality(String) DEFAULT 'API'")
 
-    def insert_gold_klines(self, records: List[Dict[str, Any]]) -> int:
+    def insert_gold_klines(self, records: List[Dict[str, Any]], source: str = "v1.0.0_api_klines", type_method: str = "API") -> int:
         if not records:
             raise ValueError("Cannot insert an empty Gold batch")
         self.ensure_tables_exist()
@@ -59,15 +63,17 @@ class ClickHouseTaskOperator:
             close_text = close_time.strftime("%Y-%m-%d %H:%M:%S.999")
             close = float(row["close"])
             volume = float(row["volume"])
+            row_source = str(row.get("source", source))
+            row_type = str(row.get("type_method", type_method))
             values.append(
                 f"({pid},'{symbol}','{open_text}','{close_text}',{float(row['open'])},"
                 f"{float(row['high'])},{float(row['low'])},{close},{volume},"
-                f"{close * volume},0,0,0)"
+                f"{close * volume},0,0,0,'{row_source}','{row_type}')"
             )
         self.execute_sql(
             "INSERT INTO crypto_klines_gold "
             "(pair_id,symbol,open_time,close_time,open,high,low,close,volume,"
-            "quote_asset_volume,number_of_trades,sma_20,rsi_14) VALUES "
+            "quote_asset_volume,number_of_trades,sma_20,rsi_14,source,type_method) VALUES "
             + ",".join(values)
         )
         return len(records)

@@ -1,6 +1,9 @@
 x-airflow-common: &airflow-common
   build: .
   image: sys02-airflow:real
+  networks:
+    - default
+    - thesis-network
   environment: &airflow-env
     PYTHONPATH: /opt/airflow/src
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -15,6 +18,11 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
     AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow_webserver:8080/execution/
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:-nhfinance_jwt_secret_key_airflow_3_3_0_production_token}
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET_KEY:-nhfinance_api_secret_key_airflow_3_3_0_production_token}
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: 60
     MINIO_ENDPOINT: ${MINIO_ENDPOINT:?Set MINIO_ENDPOINT in .env}
     MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
     MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
@@ -30,6 +38,7 @@ x-airflow-common: &airflow-common
     - ./dags:/opt/airflow/dags
     - ./src:/opt/airflow/src
     - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
 
 services:
@@ -59,12 +68,12 @@ services:
       airflow_postgres:
         condition: service_healthy
     entrypoint: >
-      /bin/bash -c "airflow db migrate && airflow users create --username ${AIRFLOW_ADMIN_USERNAME:?Set AIRFLOW_ADMIN_USERNAME in .env} --firstname Data --lastname Admin --role Admin --email ${AIRFLOW_ADMIN_EMAIL:?Set AIRFLOW_ADMIN_EMAIL in .env} --password ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env} || true"
+      /bin/bash -c "airflow db migrate && airflow users create --username ${AIRFLOW_ADMIN_USERNAME:?Set AIRFLOW_ADMIN_USERNAME in .env} --firstname Data --lastname Admin --role Admin --email ${AIRFLOW_ADMIN_EMAIL:?Set AIRFLOW_ADMIN_EMAIL in .env} --password ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env} || true && python -m sys02_orchestration.utils.init_connections || true"
 
   airflow_webserver:
     <<: *airflow-common
     container_name: sys02_airflow_webserver
-    command: webserver
+    command: api-server
     depends_on:
       airflow_postgres:
         condition: service_healthy
@@ -73,7 +82,7 @@ services:
     ports:
       - "127.0.0.1:${AIRFLOW_WEBSERVER_PORT:?Set AIRFLOW_WEBSERVER_PORT in .env}:8080"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -89,3 +98,21 @@ services:
       airflow_init:
         condition: service_completed_successfully
     restart: unless-stopped
+
+  airflow_dag_processor:
+    <<: *airflow-common
+    container_name: sys02_airflow_dag_processor
+    command: dag-processor
+    depends_on:
+      airflow_postgres:
+        condition: service_healthy
+      airflow_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+networks:
+  default:
+  thesis-network:
+    name: thesis-network
+    external: true
+

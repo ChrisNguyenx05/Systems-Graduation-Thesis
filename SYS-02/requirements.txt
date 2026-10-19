@@ -1,4 +1,5 @@
-apache-airflow-client>=2.8.0
+apache-airflow-client>=3.0.0
+apache-airflow-providers-fab>=1.0.0
 clickhouse-driver>=0.2.6
 minio>=7.2.0
 requests>=2.31.0
