@@ -1,36 +1,46 @@
 # ==============================================================================
-# 🛑 ENTERPRISE DATA & AI ECOSYSTEM - SHUTDOWN SCRIPT
+# 🛑 ENTERPRISE DATA & AI ECOSYSTEM - SHUTDOWN ORCHESTRATOR
 # ==============================================================================
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Magenta
-Write-Host "  🛑 DỪNG VÀ GIẢI PHÓNG TÀI NGUYÊN TOÀN BỘ HỆ SINH THÁI (LOCAL)       " -ForegroundColor Magenta
+Write-Host "  🛑 STOPPING AND RELEASING ALL ECOSYSTEM CONTAINERS & RESOURCES      " -ForegroundColor Magenta
 Write-Host "======================================================================" -ForegroundColor Magenta
 Write-Host ""
 
-# Dừng SYS-02 (Airflow)
+$composeCmd = "docker compose"
+if (Get-Command "docker-compose" -ErrorAction SilentlyContinue) {
+    $composeCmd = "docker-compose"
+}
+
+# 1. Stop Airflow (SYS-02)
 if (Test-Path "SYS-02/docker-compose.yml") {
-    Write-Host "[1/2] Đang dừng SYS-02 (Airflow)..." -ForegroundColor Yellow
-    docker-compose -f SYS-02/docker-compose.yml down
-    Write-Host "   ✅ SYS-02 đã dừng an toàn." -ForegroundColor Green
+    Write-Host "[1/3] Stopping SYS-02 (Airflow Pipeline)..." -ForegroundColor Yellow
+    Invoke-Expression "$composeCmd -f SYS-02/docker-compose.yml down"
+    Write-Host "   ✅ SYS-02 stopped successfully." -ForegroundColor Green
 }
 
-# Dừng SYS-05 (Storage & Lakehouse)
+# 2. Stop Lakehouse (SYS-05)
 if (Test-Path "SYS-05/docker-compose.yml") {
-    Write-Host "[2/2] Đang dừng SYS-05 (Lakehouse: MinIO, ClickHouse, Postgres)..." -ForegroundColor Yellow
-    docker-compose -f SYS-05/docker-compose.yml down
-    Write-Host "   ✅ SYS-05 đã dừng an toàn." -ForegroundColor Green
+    Write-Host ""
+    Write-Host "[2/3] Stopping SYS-05 (Lakehouse: MinIO, ClickHouse, Postgres)..." -ForegroundColor Yellow
+    Invoke-Expression "$composeCmd -f SYS-05/docker-compose.yml down"
+    Write-Host "   ✅ SYS-05 stopped successfully." -ForegroundColor Green
 }
 
-# Dừng các compose khác nếu có
-$otherServices = @("Admin_Portal", "SYS-01", "SYS-03", "SYS-04")
-foreach ($svc in $otherServices) {
+# 3. Stop All Remaining Subsystems
+$allServices = @("Admin_Portal", "WSIS", "SYS-04", "SYS-06", "SYS-01", "SYS-03")
+Write-Host ""
+Write-Host "[3/3] Stopping auxiliary microservices..." -ForegroundColor Yellow
+foreach ($svc in $allServices) {
     if (Test-Path "$svc/docker-compose.yml") {
-        Write-Host "Đang dừng $svc..." -ForegroundColor Yellow
-        docker-compose -f "$svc/docker-compose.yml" down
+        Write-Host "   • Stopping $svc..." -ForegroundColor DarkGray
+        Invoke-Expression "$composeCmd -f `"$svc/docker-compose.yml`" down"
     }
 }
 
 Write-Host ""
-Write-Host "🎉 Đã dừng toàn bộ hệ sinh thái và giải phóng RAM/CPU!" -ForegroundColor Green
+Write-Host "======================================================================" -ForegroundColor Green
+Write-Host "  🎉 ALL ECOSYSTEM SERVICES HAVE STOPPED SAFELY. RAM/CPU FREED!       " -ForegroundColor Green
+Write-Host "======================================================================" -ForegroundColor Green
 Write-Host ""

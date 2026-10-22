@@ -273,6 +273,48 @@ PARTITION BY toYYYYMM(feature_timestamp)
 PRIMARY KEY (symbol, feature_timestamp)
 ORDER BY (symbol, feature_timestamp);
 
+CREATE TABLE IF NOT EXISTS db_gold_analytics.ai_hourly_inference_results (
+    logical_date DateTime,
+    inference_timestamp DateTime DEFAULT logical_date,
+    symbol LowCardinality(String),
+    current_price Float64,
+    forecast_15m_price Float64,
+    forecast_15m_delta_pct Float64,
+    forecast_60m_price Float64,
+    forecast_60m_delta_pct Float64,
+    direction LowCardinality(String),
+    anomaly_score Float64,
+    risk_level LowCardinality(String),
+    bar_range_bps Float64,
+    volatility_parkinson Float64,
+    volume_surge_ratio Float64,
+    leverage_limit UInt16 DEFAULT 20,
+    spread_buffer String DEFAULT 'Standard',
+    fraud_decision LowCardinality(String) DEFAULT 'APPROVE',
+    fraud_risk_score Float64 DEFAULT 0.0,
+    governance_mode LowCardinality(String) DEFAULT 'ADVISORY_AND_RISK_GUARD',
+    execution_latency_ms Float64 DEFAULT 0.0,
+    created_at DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(created_at)
+ORDER BY (symbol, logical_date);
+
+CREATE TABLE IF NOT EXISTS db_gold_analytics.ai_forecast_reconciliation (
+    symbol LowCardinality(String),
+    prediction_time DateTime,
+    realized_time DateTime,
+    predicted_price_60m Float64,
+    predicted_direction LowCardinality(String),
+    predicted_delta_pct Float64,
+    actual_price Float64,
+    actual_direction LowCardinality(String),
+    actual_delta_pct Float64,
+    direction_hit UInt8,
+    absolute_error Float64,
+    percentage_error Float64,
+    created_at DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(created_at)
+ORDER BY (symbol, prediction_time);
+
 -- ----------------------------------------------------------------------------
 -- 4. BACKWARD COMPATIBILITY VIEWS & PIPELINE AUDIT TABLES IN DEFAULT
 -- ----------------------------------------------------------------------------

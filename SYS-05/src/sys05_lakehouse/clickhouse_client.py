@@ -44,6 +44,7 @@ class ClickHouseManager:
         ddl_statements = [
             """
             CREATE TABLE IF NOT EXISTS default.crypto_klines_gold (
+                pair_id UInt8 DEFAULT 0,
                 symbol LowCardinality(String),
                 open_time DateTime64(3, 'UTC'),
                 close_time DateTime64(3, 'UTC'),
@@ -58,6 +59,9 @@ class ClickHouseManager:
                 taker_buy_quote_asset_volume Float64 DEFAULT 0.0,
                 sma_20 Float64 DEFAULT 0.0,
                 rsi_14 Float64 DEFAULT 0.0,
+                source LowCardinality(String) DEFAULT 'v1.0.0_api_klines',
+                type_method LowCardinality(String) DEFAULT 'API',
+                collected_at DateTime64(3, 'UTC') DEFAULT now64(3),
                 updated_at DateTime DEFAULT now()
             )
             ENGINE = ReplacingMergeTree(updated_at)

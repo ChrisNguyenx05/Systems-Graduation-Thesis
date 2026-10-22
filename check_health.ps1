@@ -1,16 +1,16 @@
 # ==============================================================================
-# ENTERPRISE DATA & AI ECOSYSTEM - PORT & HEALTH CHECKER
+# ENTERPRISE DATA & AI ECOSYSTEM - SERVICE HEALTH CHECKER
 # ==============================================================================
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  QUET TRANG THAI HOAT DONG TOAN BO CAY DICH VU (HEALTH CHECK)        " -ForegroundColor Cyan
+Write-Host "  SCANNING HEALTH & PORT CONNECTIVITY FOR ALL ECOSYSTEM SERVICES      " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 
 $services = @(
     @{ System = "SYS-01"; Name = "Streamlit Analytics Dashboard"; Port = 8501; Type = "Web UI" },
-    @{ System = "SYS-02"; Name = "Airflow Webserver";             Port = 8085; Type = "Web UI" },
+    @{ System = "SYS-02"; Name = "Airflow Webserver (v3.3)";      Port = 8085; Type = "Web UI" },
     @{ System = "SYS-02"; Name = "Airflow Metadata Postgres";     Port = 5433; Type = "Database" },
     @{ System = "SYS-03"; Name = "Grafana Monitoring Dashboard";  Port = 3000; Type = "Web UI" },
     @{ System = "SYS-03"; Name = "Prometheus Metrics Server";     Port = 9090; Type = "Metrics" },
@@ -47,7 +47,7 @@ foreach ($svc in $services) {
             }
             $tcp.Close()
         } catch {
-            # continue to next host candidate
+            # Continue to next host candidate
         }
     }
 
@@ -58,17 +58,17 @@ foreach ($svc in $services) {
     }
     
     $results += [PSCustomObject]@{
-        "He Thong"   = $svc.System
-        "Dich Vu"    = $svc.Name
-        "Cong Port"  = $svc.Port
-        "Loai"       = $svc.Type
-        "Trang Thai" = $statusStr
+        "Subsystem" = $svc.System
+        "Service"   = $svc.Name
+        "Port"      = $svc.Port
+        "Type"      = $svc.Type
+        "Status"    = $statusStr
     }
 }
 
 $results | Format-Table -AutoSize
 
 Write-Host ""
-Write-Host "-> De khoi dong cac dich vu con tat, chay: .\start_ecosystem.ps1" -ForegroundColor Yellow
-Write-Host "-> De mo giao dien tong quan, mo file:     .\index.html" -ForegroundColor Cyan
+Write-Host "-> To start offline services, run:  .\start_ecosystem.ps1" -ForegroundColor Yellow
+Write-Host "-> To open the ecosystem landing:   .\index.html" -ForegroundColor Cyan
 Write-Host ""

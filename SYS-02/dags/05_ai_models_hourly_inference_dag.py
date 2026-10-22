@@ -198,13 +198,37 @@ def ai_models_hourly_inference_pipeline():
                 LOGGER.warning("Reconciliation check failed for %s: %s", sym, e)
 
         if reconciliation_rows:
+            ensure_rec_ddl = """
+            CREATE DATABASE IF NOT EXISTS db_gold_analytics;
+            CREATE TABLE IF NOT EXISTS db_gold_analytics.ai_forecast_reconciliation (
+                symbol LowCardinality(String),
+                prediction_time DateTime,
+                realized_time DateTime,
+                predicted_price_60m Float64,
+                predicted_direction LowCardinality(String),
+                predicted_delta_pct Float64,
+                actual_price Float64,
+                actual_direction LowCardinality(String),
+                actual_delta_pct Float64,
+                direction_hit UInt8,
+                absolute_error Float64,
+                percentage_error Float64,
+                created_at DateTime DEFAULT now()
+            ) ENGINE = ReplacingMergeTree(created_at)
+            ORDER BY (symbol, prediction_time);
+            """
+            try:
+                requests.post(url, data=ensure_rec_ddl.encode("utf-8"), auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=10)
+            except Exception:
+                pass
+
             insert_reconcile = f"""
             INSERT INTO db_gold_analytics.ai_forecast_reconciliation 
             (symbol, prediction_time, realized_time, predicted_price_60m, predicted_direction, predicted_delta_pct, actual_price, actual_direction, actual_delta_pct, direction_hit, absolute_error, percentage_error)
             VALUES {', '.join(reconciliation_rows)}
             """
             try:
-                requests.post(url, params={"query": insert_reconcile}, auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=10)
+                requests.post(url, data=insert_reconcile.encode("utf-8"), auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=10)
                 LOGGER.info("Persisted %d reconciliation comparisons to ClickHouse.", len(reconciliation_rows))
             except Exception as ex:
                 LOGGER.warning("Failed inserting reconciliation rows: %s", ex)
@@ -319,6 +343,38 @@ def ai_models_hourly_inference_pipeline():
             row_str = f"('{logical_date}', '{sym}', {curr_p}, {p15}, {d15}, {p60}, {d60}, '{direction}', {a_score}, '{risk_lvl}', {bps}, {parkinson}, {vol_surge}, {lev}, '{spread_buf}', '{f_decision}', {f_score}, 'ADVISORY_AND_RISK_GUARD', {lat_ms})"
             values_list.append(row_str)
 
+        ensure_table_ddl = """
+        CREATE DATABASE IF NOT EXISTS db_gold_analytics;
+        CREATE TABLE IF NOT EXISTS db_gold_analytics.ai_hourly_inference_results (
+            logical_date DateTime,
+            inference_timestamp DateTime DEFAULT logical_date,
+            symbol LowCardinality(String),
+            current_price Float64,
+            forecast_15m_price Float64,
+            forecast_15m_delta_pct Float64,
+            forecast_60m_price Float64,
+            forecast_60m_delta_pct Float64,
+            direction LowCardinality(String),
+            anomaly_score Float64,
+            risk_level LowCardinality(String),
+            bar_range_bps Float64,
+            volatility_parkinson Float64,
+            volume_surge_ratio Float64,
+            leverage_limit UInt16 DEFAULT 20,
+            spread_buffer String DEFAULT 'Standard',
+            fraud_decision LowCardinality(String) DEFAULT 'APPROVE',
+            fraud_risk_score Float64 DEFAULT 0.0,
+            governance_mode LowCardinality(String) DEFAULT 'ADVISORY_AND_RISK_GUARD',
+            execution_latency_ms Float64 DEFAULT 0.0,
+            created_at DateTime DEFAULT now()
+        ) ENGINE = ReplacingMergeTree(created_at)
+        ORDER BY (symbol, logical_date);
+        """
+        try:
+            requests.post(url, data=ensure_table_ddl.encode("utf-8"), auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=10)
+        except Exception as e_ddl:
+            LOGGER.warning("Auto table DDL check for ai_hourly_inference_results: %s", e_ddl)
+
         if values_list:
             insert_query = f"""
             INSERT INTO db_gold_analytics.ai_hourly_inference_results 
@@ -326,7 +382,7 @@ def ai_models_hourly_inference_pipeline():
             VALUES {', '.join(values_list)}
             """
             try:
-                resp = requests.post(url, params={"query": insert_query}, auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=15)
+                resp = requests.post(url, data=insert_query.encode("utf-8"), auth=(CLICKHOUSE_USER, CLICKHOUSE_PASSWORD), timeout=15)
                 resp.raise_for_status()
                 LOGGER.info("Inserted %d hourly AI inference rows into ClickHouse successfully.", len(values_list))
             except Exception as e:

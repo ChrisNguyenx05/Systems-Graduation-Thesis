@@ -44,6 +44,7 @@ class ClickHouseTaskOperator:
                 updated_at DateTime DEFAULT now()
             ) ENGINE = ReplacingMergeTree(updated_at) ORDER BY (symbol, open_time)
         """)
+        self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0")
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS source LowCardinality(String) DEFAULT 'v1.0.0_api_klines'")
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS type_method LowCardinality(String) DEFAULT 'API'")
 

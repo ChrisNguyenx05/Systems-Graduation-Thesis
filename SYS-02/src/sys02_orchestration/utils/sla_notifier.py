@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 def send_sys06_alert(payload: dict) -> bool:
     """Dispatches alert payload to SYS-06 Alert Dispatcher via Docker Network."""
+    if not config.alert.sla_alert_enabled:
+        return True
     url = os.getenv("SYS06_ALERT_URL", config.alert.sys06_alert_url).strip()
     token = os.getenv("SYS06_ALERT_API_TOKEN", config.alert.sys06_alert_token).strip()
 
@@ -36,6 +38,8 @@ def send_sys06_alert(payload: dict) -> bool:
 
 def send_telegram_alert(message: str, level: str = "CRITICAL") -> bool:
     """Sends notification directly to Telegram API if configured."""
+    if not config.alert.sla_alert_enabled:
+        return True
     token = config.alert.telegram_bot_token
     chat_id = config.alert.telegram_chat_id
 
@@ -62,6 +66,8 @@ def on_task_failure_callback(context: Dict[str, Any]) -> None:
     Airflow callback triggered IMMEDIATELY when any task fails.
     Explicitly highlights which DAG and Task failed with granular code traces.
     """
+    if not config.alert.sla_alert_enabled:
+        return
     from sys02_orchestration.utils.error_tracer import ErrorTracer
 
     ti = context.get("task_instance")
