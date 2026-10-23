@@ -42,7 +42,6 @@ services:
       - sys-02_default
       - sys-05_default
       - thesis-network
-    env_file: - .env
 
 networks:
   sys-02_default:
