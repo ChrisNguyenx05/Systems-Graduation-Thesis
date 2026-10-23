@@ -18,6 +18,8 @@ services:
       - ./AI Models/src:/app/AI Models/src:ro
       - ./server.py:/app/server.py:ro
       - ./entrypoint.py:/app/entrypoint.py:ro
+    env_file:
+      - .env
     environment:
       - PORT=8000
       - HOST=0.0.0.0
@@ -40,6 +42,7 @@ services:
       - sys-02_default
       - sys-05_default
       - thesis-network
+    env_file: - .env
 
 networks:
   sys-02_default:

@@ -21,3 +21,13 @@ services:
       options:
         max-size: "50m"
         max-file: "3"
+    networks:
+      - default
+      - thesis-network
+
+networks:
+  default:
+  thesis-network:
+    name: thesis-network
+    external: true
+

@@ -3,11 +3,26 @@
 # ==============================================================================
 # Purpose: Automatically setups environment variables, Docker networks, builds
 #          all container images, applies database migrations, and starts all systems.
+# Options:
+#   .\setup_new_machine.ps1             : Standard incremental bootstrap
+#   .\setup_new_machine.ps1 -CleanAll   : Purge old containers, volumes, databases,
+#                                         and historical data (preserves .env files)
 # ==============================================================================
+
+[CmdletBinding()]
+param (
+    [switch]$CleanAll = $false
+)
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "  🌟 INITIALIZING ECOSYSTEM ON A NEW MACHINE (AUTOMATED BOOTSTRAP)    " -ForegroundColor Cyan
+if ($CleanAll) {
+    Write-Host "  🧹 MODE: CLEAN-ALL (Full Reset: Containers, Volumes & Database State) " -ForegroundColor Yellow
+    Write-Host "  🛡️  PRESERVATION: All .env files are kept intact                     " -ForegroundColor Yellow
+} else {
+    Write-Host "  ⚡ MODE: INCREMENTAL (Safe Bootstrap, preserving existing data)      " -ForegroundColor Green
+}
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -15,6 +30,52 @@ Write-Host ""
 $composeCmd = "docker compose"
 if (Get-Command "docker-compose" -ErrorAction SilentlyContinue) {
     $composeCmd = "docker-compose"
+}
+
+# ------------------------------------------------------------------------------
+# STEP 0: CLEAN-ALL PURGE (TRIGGERED ONLY WHEN -CleanAll IS SPECIFIED)
+# ------------------------------------------------------------------------------
+if ($CleanAll) {
+    Write-Host "[0/7] Performing Full Clean-All Reset..." -ForegroundColor Yellow
+    
+    # 1. Stop and remove all containers, networks, volumes
+    Write-Host "   🛑 Terminating and removing all ecosystem containers and volumes..." -ForegroundColor Cyan
+    $allServices = @("Admin_Portal", "WSIS", "SYS-04", "SYS-06", "SYS-02", "SYS-05")
+    foreach ($svc in $allServices) {
+        if (Test-Path "$svc/docker-compose.yml") {
+            Write-Host "      • Tearing down $svc (volumes & orphans)..." -ForegroundColor DarkGray
+            Invoke-Expression "$composeCmd -f `"$svc/docker-compose.yml`" down -v --remove-orphans" | Out-Null
+        }
+    }
+
+    # 2. Remove shared Docker network
+    $netCheck = docker network ls --filter "name=^thesis-network$" --format "{{.Name}}"
+    if ($netCheck) {
+        Write-Host "      • Removing existing 'thesis-network'..." -ForegroundColor DarkGray
+        docker network rm thesis-network 2>$null | Out-Null
+    }
+
+    # 3. Purge storage directories (MinIO, ClickHouse, Postgres, Airflow logs)
+    # NOTE: Preserves directory structure and all .env files intact!
+    Write-Host "   🗑️ Purging lakehouse storage, database parts & runtime logs..." -ForegroundColor Cyan
+    $dataDirs = @(
+        "SYS-05/data/minio",
+        "SYS-05/data/clickhouse",
+        "SYS-05/data/postgres",
+        "SYS-02/data/postgres",
+        "SYS-02/logs",
+        "SYS-06/logs"
+    )
+    foreach ($dir in $dataDirs) {
+        if (Test-Path $dir) {
+            Get-ChildItem -Path $dir -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "      • Cleared $dir" -ForegroundColor DarkGray
+        } else {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        }
+    }
+    Write-Host "   ✅ Clean-All completed: System reset to pristine blank state." -ForegroundColor Green
+    Write-Host ""
 }
 
 # ------------------------------------------------------------------------------
@@ -105,7 +166,39 @@ if (Test-Path "SYS-04/.env") {
     Set-Content -Path "SYS-04/.env" -Value $sys04Env -Force
 }
 
-Write-Host "   ✅ All environment variables configured and synchronized." -ForegroundColor Green
+# Ensure WSIS/.env has default credentials
+if (Test-Path "WSIS/.env") {
+    $wsisEnv = Get-Content "WSIS/.env" -Raw
+    $wsisEnv = $wsisEnv -replace "MINIO_ACCESS_KEY=.*", "MINIO_ACCESS_KEY=nhfinanceadmin"
+    $wsisEnv = $wsisEnv -replace "MINIO_SECRET_KEY=.*", "MINIO_SECRET_KEY=nhathuy123"
+    $wsisEnv = $wsisEnv -replace "MINIO_ENDPOINT=http://127.0.0.1:9000", "MINIO_ENDPOINT=http://host.docker.internal:9000"
+    Set-Content -Path "WSIS/.env" -Value $wsisEnv -Force
+}
+
+# Verify all 6 subsystem .env configuration profiles
+Write-Host "   🔍 Auditing subsystem environment profiles..." -ForegroundColor Cyan
+$envAudit = @(
+    @{ System = "SYS-05"; Path = "SYS-05/.env" },
+    @{ System = "SYS-02"; Path = "SYS-02/.env" },
+    @{ System = "SYS-04"; Path = "SYS-04/.env" },
+    @{ System = "SYS-06"; Path = "SYS-06/.env" },
+    @{ System = "WSIS";   Path = "WSIS/.env" },
+    @{ System = "PORTAL"; Path = "Admin_Portal/backend/.env" }
+)
+$envMissing = @()
+foreach ($item in $envAudit) {
+    if (Test-Path $item.Path) {
+        Write-Host "      • $($item.System,-8) $($item.Path,-28) [OK]" -ForegroundColor Green
+    } else {
+        Write-Host "      • $($item.System,-8) $($item.Path,-28) [MISSING]" -ForegroundColor Red
+        $envMissing += $item.Path
+    }
+}
+if ($envMissing.Count -gt 0) {
+    Write-Host "❌ ERROR: Missing required .env file(s): $($envMissing -join ', ')" -ForegroundColor Red
+    exit 1
+}
+Write-Host "   ✅ All 6 subsystem .env profiles verified and synchronized." -ForegroundColor Green
 
 # ------------------------------------------------------------------------------
 # STEP 4: CLEAN INCOMPATIBLE MINIO STORAGE CACHE IF DETECTED
@@ -125,10 +218,12 @@ Invoke-Expression "$composeCmd -f SYS-05/docker-compose.yml up -d"
 Write-Host "   ⏳ Waiting 10 seconds for ClickHouse and MinIO initialization..." -ForegroundColor Cyan
 Start-Sleep -Seconds 10
 
-# Apply ClickHouse DDL Migrations (Ensure pair_id and AI inference tables exist)
+# Apply ClickHouse DDL Migrations (Ensure pair_id, source, type_method and AI inference tables exist)
 Write-Host "   ⚙️ Applying ClickHouse database schemas & table migrations..." -ForegroundColor Cyan
 $migrationSql = @"
 ALTER TABLE default.crypto_klines_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0;
+ALTER TABLE default.crypto_klines_gold ADD COLUMN IF NOT EXISTS source LowCardinality(String) DEFAULT 'v1.0.0_api_klines';
+ALTER TABLE default.crypto_klines_gold ADD COLUMN IF NOT EXISTS type_method LowCardinality(String) DEFAULT 'API';
 CREATE DATABASE IF NOT EXISTS db_gold_analytics;
 CREATE TABLE IF NOT EXISTS db_gold_analytics.ai_hourly_inference_results (
     logical_date DateTime,

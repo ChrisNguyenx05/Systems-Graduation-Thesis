@@ -58,7 +58,16 @@ foreach ($pair in $envPairs) {
         Copy-Item $pair.Src $pair.Dst -Force
     }
 }
-Write-Host "   ✅ Environment files verified." -ForegroundColor Green
+
+# Ensure unified credentials in WSIS/.env if present
+if (Test-Path "WSIS/.env") {
+    $w = Get-Content "WSIS/.env" -Raw
+    $w = $w -replace "MINIO_ACCESS_KEY=.*", "MINIO_ACCESS_KEY=nhfinanceadmin"
+    $w = $w -replace "MINIO_SECRET_KEY=.*", "MINIO_SECRET_KEY=nhathuy123"
+    $w = $w -replace "MINIO_ENDPOINT=http://127.0.0.1:9000", "MINIO_ENDPOINT=http://host.docker.internal:9000"
+    Set-Content -Path "WSIS/.env" -Value $w -Force
+}
+Write-Host "   ✅ Environment files verified and synchronized." -ForegroundColor Green
 
 # 4. Start SYS-05: Storage & Lakehouse Core (MinIO, ClickHouse, Postgres)
 Write-Host ""

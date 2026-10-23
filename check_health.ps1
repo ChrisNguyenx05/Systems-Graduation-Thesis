@@ -4,9 +4,38 @@
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  SCANNING HEALTH & PORT CONNECTIVITY FOR ALL ECOSYSTEM SERVICES      " -ForegroundColor Cyan
+Write-Host "  ENTERPRISE DATA & AI ECOSYSTEM - COMPREHENSIVE HEALTH CHECK         " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
+
+# ------------------------------------------------------------------------------
+# 1. ENVIRONMENT CONFIGURATION CHECK (.env)
+# ------------------------------------------------------------------------------
+Write-Host ">> STEP 1: Verifying Subsystem Configuration (.env) Files..." -ForegroundColor Yellow
+$envConfigs = @(
+    @{ System = "SYS-02"; Path = "SYS-02/.env" },
+    @{ System = "SYS-04"; Path = "SYS-04/.env" },
+    @{ System = "SYS-05"; Path = "SYS-05/.env" },
+    @{ System = "SYS-06"; Path = "SYS-06/.env" },
+    @{ System = "WSIS";   Path = "WSIS/.env" },
+    @{ System = "PORTAL"; Path = "Admin_Portal/backend/.env" }
+)
+$envResults = @()
+foreach ($ec in $envConfigs) {
+    $exists = Test-Path $ec.Path
+    $envResults += [PSCustomObject]@{
+        "Subsystem"  = $ec.System
+        "ConfigPath" = $ec.Path
+        "Status"     = if ($exists) { "[EXISTS]" } else { "[MISSING]" }
+    }
+}
+$envResults | Format-Table -AutoSize
+
+# ------------------------------------------------------------------------------
+# 2. RUNTIME SERVICE & PORT HEALTH SCAN
+# ------------------------------------------------------------------------------
+Write-Host ">> STEP 2: Scanning Health & Port Connectivity for Active Services..." -ForegroundColor Yellow
+
 
 $services = @(
     @{ System = "SYS-01"; Name = "Streamlit Analytics Dashboard"; Port = 8501; Type = "Web UI" },
