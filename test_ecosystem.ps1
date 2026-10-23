@@ -205,14 +205,14 @@ if ($chPing.Success) {
 
     # 2.5 Check ClickHouse Table Schemas
     $pairIdCheck = Invoke-QuickHttp -Url "http://localhost:8123/?query=SELECT%20count()%20FROM%20system.columns%20WHERE%20table%3D'crypto_klines_gold'%20AND%20name%3D'pair_id'" -Headers $headers
-    if ($pairIdCheck.Success -and [int]($pairIdCheck.Data.Trim()) -ge 1) {
+    if ($pairIdCheck.Success -and [int]"$($pairIdCheck.Data)".Trim() -ge 1) {
         Add-TestResult "Lakehouse" "SYS-05" "Schema: pair_id column" "PASS" "Column 'pair_id' exists in crypto_klines_gold"
     } else {
         Add-TestResult "Lakehouse" "SYS-05" "Schema: pair_id column" "WARN" "Column 'pair_id' missing (auto-patch will run via Airflow)"
     }
 
     $aiTableCheck = Invoke-QuickHttp -Url "http://localhost:8123/?query=SELECT%20count()%20FROM%20system.tables%20WHERE%20database%3D'db_gold_analytics'%20AND%20name%3D'ai_hourly_inference_results'" -Headers $headers
-    if ($aiTableCheck.Success -and [int]($aiTableCheck.Data.Trim()) -ge 1) {
+    if ($aiTableCheck.Success -and [int]"$($aiTableCheck.Data)".Trim() -ge 1) {
         Add-TestResult "Lakehouse" "SYS-05" "Schema: AI Inference Table" "PASS" "db_gold_analytics.ai_hourly_inference_results exists"
     } else {
         Add-TestResult "Lakehouse" "SYS-05" "Schema: AI Inference Table" "WARN" "Table missing (Run setup_new_machine.ps1 to initialize DDL)"
