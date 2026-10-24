@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # 🌟 ENTERPRISE PLATFORM - FIRST-TIME BOOTSTRAPPER FOR NEW MACHINES
 # ==============================================================================
 # Purpose: Automatically setups environment variables, Docker networks, builds
@@ -188,9 +188,9 @@ $envAudit = @(
 $envMissing = @()
 foreach ($item in $envAudit) {
     if (Test-Path $item.Path) {
-        Write-Host "      • $($item.System,-8) $($item.Path,-28) [OK]" -ForegroundColor Green
+        Write-Host ("      • {0,-8} {1,-28} [OK]" -f $item.System, $item.Path) -ForegroundColor Green
     } else {
-        Write-Host "      • $($item.System,-8) $($item.Path,-28) [MISSING]" -ForegroundColor Red
+        Write-Host ("      • {0,-8} {1,-28} [MISSING]" -f $item.System, $item.Path) -ForegroundColor Red
         $envMissing += $item.Path
     }
 }

@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # ENTERPRISE DATA & AI ECOSYSTEM - COMPREHENSIVE PRE-FLIGHT VERIFICATION TEST
 # ==============================================================================
 # Purpose: End-to-end smoke test & health diagnostics to run before live demos
