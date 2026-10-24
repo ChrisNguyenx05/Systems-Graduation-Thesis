@@ -11,6 +11,7 @@ cloudflared/config.yml
 tunnel.log
 TUNNEL_URL.txt
 *.log
+test_alerts.txt
 
 # Large Datasets and AI raw data
 **/Dataset/
