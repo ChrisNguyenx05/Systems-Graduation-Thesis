@@ -152,6 +152,115 @@ def validate_klines_data(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     return result
 
 
+def reconcile_api_with_wsis_silver(
+    api_records: List[Dict[str, Any]],
+    wsis_records: List[Dict[str, Any]],
+    symbol: str,
+    price_tolerance_pct: float = 0.1,
+    volume_min_ratio: float = 95.0,
+    volume_max_ratio: float = 105.0,
+    min_accuracy_score: float = 95.0
+) -> Dict[str, Any]:
+    """
+    Silver-layer Cross-Stream Data Quality Gate.
+    Evaluates Truthfulness (Tinh Dung Dan) between API Silver and WSIS Silver:
+    1. Closed Candles Only (is_kline_closed == 1 or True)
+    2. Price Delta <= 0.1% (Strict Price Integrity)
+    3. Volume Ratio in [95.0%, 105.0%] (Strict Completeness & Non-duplication)
+    4. Composite Accuracy Score >= 95.0% -> TRUE (Passed) / FALSE (Failed)
+    """
+    if not api_records:
+        return {
+            "passed": False,
+            "status": "FALSE",
+            "accuracy_score": 0.0,
+            "details": f"No API records provided for {symbol}",
+            "symbol": symbol
+        }
+
+    if not wsis_records:
+        return {
+            "passed": False,
+            "status": "FALSE",
+            "accuracy_score": 0.0,
+            "details": f"WSIS Silver records missing for {symbol}. Reconciliation failed.",
+            "symbol": symbol
+        }
+
+    wsis_map = {}
+    for r in wsis_records:
+        ts = int(r.get("timestamp") or (r.get("open_time", 0) // 1000 if r.get("open_time", 0) > 100000000000 else r.get("open_time", 0)))
+        wsis_map[ts] = r
+
+    matched_price_count = 0
+    matched_volume_count = 0
+    evaluated_count = 0
+    mismatches = []
+
+    for api_r in api_records:
+        ts = int(api_r.get("timestamp") or (api_r.get("open_time", 0) // 1000 if api_r.get("open_time", 0) > 100000000000 else api_r.get("open_time", 0)))
+        ws_r = wsis_map.get(ts)
+        if not ws_r:
+            mismatches.append(f"Timestamp {ts} missing in WSIS")
+            continue
+
+        evaluated_count += 1
+        api_close = float(api_r.get("close", 0.0))
+        ws_close = float(ws_r.get("close", 0.0))
+        api_vol = float(api_r.get("volume", 0.0))
+        ws_vol = float(ws_r.get("volume", 0.0))
+
+        # 1. Price check (tolerance <= 0.1%)
+        if api_close > 0:
+            price_delta_pct = (abs(api_close - ws_close) / api_close) * 100.0
+            if price_delta_pct <= price_tolerance_pct:
+                matched_price_count += 1
+            else:
+                mismatches.append(f"Price drift at {ts}: API={api_close}, WS={ws_close}, delta={price_delta_pct:.3f}%")
+        else:
+            matched_price_count += 1
+
+        # 2. Volume check (in range 95.0% - 105.0%)
+        if api_vol > 0:
+            vol_ratio = (ws_vol / api_vol) * 100.0
+            if volume_min_ratio <= vol_ratio <= volume_max_ratio:
+                matched_volume_count += 1
+            else:
+                mismatches.append(f"Volume ratio drift at {ts}: API={api_vol}, WS={ws_vol}, ratio={vol_ratio:.2f}%")
+        else:
+            matched_volume_count += 1
+
+    total_api = len(api_records)
+    price_accuracy_pct = (matched_price_count / max(1, total_api)) * 100.0
+    volume_accuracy_pct = (matched_volume_count / max(1, total_api)) * 100.0
+    composite_score = (0.5 * price_accuracy_pct) + (0.5 * volume_accuracy_pct)
+
+    passed = (composite_score >= min_accuracy_score) and (evaluated_count > 0)
+    status = "TRUE" if passed else "FALSE"
+
+    details = (
+        f"Composite Accuracy={composite_score:.2f}% (Threshold: {min_accuracy_score}%). "
+        f"Price Matched: {matched_price_count}/{total_api} ({price_accuracy_pct:.1f}%), "
+        f"Volume Matched [95-105%]: {matched_volume_count}/{total_api} ({volume_accuracy_pct:.1f}%)."
+    )
+    if mismatches:
+        details += f" Samples: {'; '.join(mismatches[:3])}"
+
+    return {
+        "passed": passed,
+        "status": status,
+        "accuracy_score": round(composite_score, 2),
+        "price_accuracy_pct": round(price_accuracy_pct, 2),
+        "volume_accuracy_pct": round(volume_accuracy_pct, 2),
+        "total_api_candles": total_api,
+        "evaluated_candles": evaluated_count,
+        "matched_price_count": matched_price_count,
+        "matched_volume_count": matched_volume_count,
+        "details": details,
+        "symbol": symbol
+    }
+
+
 def reconcile_api_with_wsis_bronze(
     api_records: List[Dict[str, Any]],
     symbol: str,
@@ -159,116 +268,57 @@ def reconcile_api_with_wsis_bronze(
 ) -> Dict[str, Any]:
     """
     Cross-reconciliation between Primary API records and Secondary WSIS Bronze stream.
-    WSIS functions strictly as a Quality Control (QC) and Auditing gate.
-    If WSIS data is unavailable or lagging, this gate records a notice and allows
-    API ingestion to proceed because API is the primary ground truth.
+    WSIS functions as an auditable Quality Control gate.
     """
     if not api_records:
         return {
             "reconciliation_attempted": False,
             "wsis_available": False,
-            "matched": True,
+            "matched": False,
+            "passed": False,
             "max_price_delta_pct": 0.0,
-            "status": "NO_API_RECORDS",
+            "status": "FALSE",
             "details": "No API records provided for reconciliation."
         }
 
     try:
-        import gzip
-        import json
         from sys02_orchestration.operators.lakehouse_operator import LakehouseTaskOperator
         lakehouse = LakehouseTaskOperator()
-        client = lakehouse._client()
+        date_str = datetime.now().date().isoformat()
+        wsis_silver = lakehouse.fetch_wsis_silver_records(symbol, date_str)
 
-        prefix = "wsis/klines/"
-        if not client.bucket_exists(lakehouse.bronze_bucket):
+        if not wsis_silver:
             return {
                 "reconciliation_attempted": True,
                 "wsis_available": False,
-                "matched": True,
+                "matched": False,
+                "passed": False,
                 "max_price_delta_pct": 0.0,
-                "status": "WSIS_OFFLINE_API_AUTHORIZED",
-                "details": f"Bronze bucket {lakehouse.bronze_bucket} not ready. Primary API authorized."
+                "status": "FALSE",
+                "details": f"No closed WSIS Silver records available in MinIO for {symbol}."
             }
 
-        wsis_files = list(client.list_objects(lakehouse.bronze_bucket, prefix=prefix, recursive=True))
-        if not wsis_files:
-            logger.info("QC Notice: No WSIS klines stream files found in MinIO Bronze. Primary API authorized.")
-            return {
-                "reconciliation_attempted": True,
-                "wsis_available": False,
-                "matched": True,
-                "max_price_delta_pct": 0.0,
-                "status": "WSIS_OFFLINE_API_AUTHORIZED",
-                "details": "WSIS stream data not present for current window. Primary API authorized."
-            }
-
-        # Read latest WSIS stream file
-        sorted_files = sorted(wsis_files, key=lambda x: str(x.object_name), reverse=True)
-        latest_obj = sorted_files[0]
-        resp = client.get_object(lakehouse.bronze_bucket, latest_obj.object_name)
-        try:
-            raw_bytes = resp.read()
-            if latest_obj.object_name.endswith(".gz"):
-                raw_bytes = gzip.decompress(raw_bytes)
-            wsis_rows = [json.loads(line) for line in raw_bytes.decode("utf-8").splitlines() if line.strip()]
-        finally:
-            resp.close()
-            resp.release_conn()
-
-        # Find WSIS record for matching symbol
-        wsis_match = next((r for r in reversed(wsis_rows) if r.get("symbol", "").upper() == symbol.upper()), None)
-        if not wsis_match:
-            return {
-                "reconciliation_attempted": True,
-                "wsis_available": False,
-                "matched": True,
-                "max_price_delta_pct": 0.0,
-                "status": "WSIS_SYMBOL_NOT_FOUND",
-                "details": f"WSIS file found but symbol {symbol} not present. Primary API authorized."
-            }
-
-        latest_api_record = api_records[-1]
-        api_close = float(latest_api_record.get("close", 0.0))
-        wsis_close = float(wsis_match.get("close", 0.0))
-
-        if api_close > 0 and wsis_close > 0:
-            delta = abs(api_close - wsis_close)
-            delta_pct = (delta / api_close) * 100.0
-            matched = delta_pct <= tolerance_pct
-            status = "GOLD_VERIFIED" if matched else "DESYNC_WARNING"
-            details = (
-                f"API Close={api_close}, WSIS Close={wsis_close}, "
-                f"Delta={delta:.4f} ({delta_pct:.3f}%). Tolerance={tolerance_pct}%"
-            )
-            logger.info("WSIS QC Cross-Reconciliation Result: %s | %s", status, details)
-            return {
-                "reconciliation_attempted": True,
-                "wsis_available": True,
-                "matched": matched,
-                "max_price_delta_pct": round(delta_pct, 4),
-                "api_close": api_close,
-                "wsis_close": wsis_close,
-                "status": status,
-                "details": details
-            }
+        res = reconcile_api_with_wsis_silver(api_records, wsis_silver, symbol)
         return {
             "reconciliation_attempted": True,
             "wsis_available": True,
-            "matched": True,
-            "max_price_delta_pct": 0.0,
-            "status": "GOLD_VERIFIED",
-            "details": "Zero price comparison encountered; passed."
+            "matched": res["passed"],
+            "passed": res["passed"],
+            "accuracy_score": res["accuracy_score"],
+            "max_price_delta_pct": round(100.0 - res["price_accuracy_pct"], 4),
+            "status": res["status"],
+            "details": res["details"]
         }
     except Exception as exc:
-        logger.warning("QC Reconciliation notice (WSIS audit check non-blocking): %s", exc)
+        logger.warning("QC Reconciliation notice: %s", exc)
         return {
             "reconciliation_attempted": True,
             "wsis_available": False,
-            "matched": True,
+            "matched": False,
+            "passed": False,
             "max_price_delta_pct": 0.0,
-            "status": "WSIS_ERROR_API_AUTHORIZED",
-            "details": f"WSIS check encountered error: {exc}. Primary API authorized."
+            "status": "FALSE",
+            "details": f"WSIS check encountered error: {exc}"
         }
 
 

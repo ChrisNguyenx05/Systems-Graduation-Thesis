@@ -28,6 +28,7 @@ class ClickHouseTaskOperator:
             raise RuntimeError(f"ClickHouse query failed at {self.host}:{self.port}: {exc}{err_detail}") from exc
 
     def ensure_tables_exist(self) -> None:
+        # 1. Gold layer (Analytical Marts)
         self.execute_sql("""
             CREATE TABLE IF NOT EXISTS crypto_klines_gold (
                 pair_id UInt8 DEFAULT 0,
@@ -47,6 +48,110 @@ class ClickHouseTaskOperator:
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS pair_id UInt8 DEFAULT 0")
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS source LowCardinality(String) DEFAULT 'v1.0.0_api_klines'")
         self.execute_sql("ALTER TABLE crypto_klines_gold ADD COLUMN IF NOT EXISTS type_method LowCardinality(String) DEFAULT 'API'")
+
+        # 2. Silver layer - REST API Table
+        self.execute_sql("""
+            CREATE TABLE IF NOT EXISTS silver_crypto_klines (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String), open_time DateTime64(3, 'UTC'),
+                close_time DateTime64(3, 'UTC'), open Float64, high Float64,
+                low Float64, close Float64, volume Float64,
+                quote_asset_volume Float64 DEFAULT 0, number_of_trades UInt32 DEFAULT 0,
+                taker_buy_base_volume Float64 DEFAULT 0,
+                taker_buy_quote_volume Float64 DEFAULT 0,
+                first_trade_id Int64 DEFAULT -1, last_trade_id Int64 DEFAULT -1,
+                is_kline_closed UInt8 DEFAULT 1,
+                source LowCardinality(String) DEFAULT 'v1.0.0_api_klines',
+                type_method LowCardinality(String) DEFAULT 'API',
+                ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
+            ) ENGINE = ReplacingMergeTree(ingested_at) ORDER BY (symbol, open_time)
+        """)
+
+        # 3. Silver layer - WebSocket WSIS Table (Strict Isolation)
+        self.execute_sql("""
+            CREATE TABLE IF NOT EXISTS wsis_silver (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String), open_time DateTime64(3, 'UTC'),
+                close_time DateTime64(3, 'UTC'), open Float64, high Float64,
+                low Float64, close Float64, volume Float64,
+                quote_asset_volume Float64 DEFAULT 0, number_of_trades UInt32 DEFAULT 0,
+                taker_buy_base_volume Float64 DEFAULT 0,
+                taker_buy_quote_volume Float64 DEFAULT 0,
+                first_trade_id Int64 DEFAULT -1, last_trade_id Int64 DEFAULT -1,
+                is_kline_closed UInt8 DEFAULT 1,
+                source LowCardinality(String) DEFAULT 'wsis_stream',
+                type_method LowCardinality(String) DEFAULT 'WEBSOCKET',
+                ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
+            ) ENGINE = ReplacingMergeTree(ingested_at) ORDER BY (symbol, open_time)
+        """)
+
+        # 4. Bronze layer - Separate Raw Tables for API & WSIS
+        self.execute_sql("""
+            CREATE TABLE IF NOT EXISTS raw_binance_klines_api (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                market_type LowCardinality(String) DEFAULT 'SPOT',
+                interval LowCardinality(String) DEFAULT '1m',
+                source_type LowCardinality(String) DEFAULT 'API',
+                ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+                raw_payload String
+            ) ENGINE = MergeTree() ORDER BY (symbol, interval, ingestion_time)
+        """)
+        self.execute_sql("""
+            CREATE TABLE IF NOT EXISTS raw_binance_klines_wsis (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                market_type LowCardinality(String) DEFAULT 'SPOT',
+                interval LowCardinality(String) DEFAULT '15m',
+                source_type LowCardinality(String) DEFAULT 'WEBSOCKET',
+                ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+                raw_payload String
+            ) ENGINE = MergeTree() ORDER BY (symbol, interval, ingestion_time)
+        """)
+
+    def insert_silver_klines(
+        self,
+        records: List[Dict[str, Any]],
+        table_name: str = "silver_crypto_klines",
+        source: str = "v1.0.0_api_klines",
+        type_method: str = "API"
+    ) -> int:
+        """Insert vetted records into dedicated Silver table (either API or WSIS)."""
+        if not records:
+            return 0
+        self.ensure_tables_exist()
+        values = []
+        for row in records:
+            symbol = str(row["symbol"])
+            if not symbol.isalnum():
+                continue
+            pid = int(row.get("pair_id", 0)) or SYMBOL_TO_PAIR_ID.get(symbol, 0)
+            ts = int(row.get("timestamp") or row.get("open_time", 0))
+            if ts > 100000000000:  # timestamp is in ms
+                ts = ts // 1000
+            open_time = datetime.fromtimestamp(ts, timezone.utc)
+            close_time = open_time.replace(second=59, microsecond=999000)
+            open_text = open_time.strftime("%Y-%m-%d %H:%M:%S.000")
+            close_text = close_time.strftime("%Y-%m-%d %H:%M:%S.999")
+            close = float(row.get("close", 0.0))
+            volume = float(row.get("volume", 0.0))
+            is_closed = 1 if row.get("is_closed", True) in [True, 1, "1", "true"] else 0
+            row_source = str(row.get("source", source))
+            row_type = str(row.get("type_method", type_method))
+            values.append(
+                f"({pid},'{symbol}','{open_text}','{close_text}',{float(row.get('open', 0.0))},"
+                f"{float(row.get('high', 0.0))},{float(row.get('low', 0.0))},{close},{volume},"
+                f"{close * volume},0,0,0,-1,-1,{is_closed},'{row_source}','{row_type}')"
+            )
+        if values:
+            self.execute_sql(
+                f"INSERT INTO {table_name} "
+                "(pair_id,symbol,open_time,close_time,open,high,low,close,volume,"
+                "quote_asset_volume,number_of_trades,taker_buy_base_volume,taker_buy_quote_volume,"
+                "first_trade_id,last_trade_id,is_kline_closed,source,type_method) VALUES "
+                + ",".join(values)
+            )
+        return len(values)
 
     def insert_gold_klines(self, records: List[Dict[str, Any]], source: str = "v1.0.0_api_klines", type_method: str = "API") -> int:
         if not records:

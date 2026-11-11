@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
 
-# Load .env file from project root or current working directory
+# Load .env file from SYS-05 directory or current working directory
+env_local = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+if os.path.exists(env_local):
+    load_dotenv(env_local)
 load_dotenv()
 
 @dataclass
