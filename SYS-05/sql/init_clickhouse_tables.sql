@@ -35,6 +35,33 @@ INSERT INTO default.dim_trading_pairs (pair_id, base_coin, quote_coin, trading_p
 -- ----------------------------------------------------------------------------
 CREATE DATABASE IF NOT EXISTS db_bronze;
 
+-- Raw Klines từ REST API Binance
+CREATE TABLE IF NOT EXISTS db_bronze.raw_binance_klines_api (
+    pair_id UInt8,
+    symbol LowCardinality(String),
+    market_type LowCardinality(String),
+    interval LowCardinality(String),
+    source_type LowCardinality(String) DEFAULT 'API',
+    ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+    raw_payload String
+) ENGINE = MergeTree()
+PARTITION BY (toYYYYMM(ingestion_time), market_type)
+ORDER BY (symbol, interval, ingestion_time);
+
+-- Raw Klines từ WebSocket Binance (WSIS)
+CREATE TABLE IF NOT EXISTS db_bronze.raw_binance_klines_wsis (
+    pair_id UInt8,
+    symbol LowCardinality(String),
+    market_type LowCardinality(String),
+    interval LowCardinality(String),
+    source_type LowCardinality(String) DEFAULT 'WEBSOCKET',
+    ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+    raw_payload String
+) ENGINE = MergeTree()
+PARTITION BY (toYYYYMM(ingestion_time), market_type)
+ORDER BY (symbol, interval, ingestion_time);
+
+-- Raw Klines dùng chung (backward-compatibility)
 CREATE TABLE IF NOT EXISTS db_bronze.raw_binance_klines (
     pair_id UInt8,
     symbol LowCardinality(String),
@@ -84,7 +111,7 @@ CREATE DATABASE IF NOT EXISTS db_silver_market;
 CREATE DATABASE IF NOT EXISTS db_silver_orderbook;
 CREATE DATABASE IF NOT EXISTS db_silver_derivatives;
 
--- Silver Klines (All 12 REST Elements + WebSocket Fields + pair_id)
+-- Silver Klines - REST API (All 12 REST Elements + pair_id + lineage)
 CREATE TABLE IF NOT EXISTS db_silver_market.silver_crypto_klines (
     pair_id UInt8,
     market_type LowCardinality(String),
@@ -104,6 +131,36 @@ CREATE TABLE IF NOT EXISTS db_silver_market.silver_crypto_klines (
     first_trade_id Int64 DEFAULT -1,
     last_trade_id Int64 DEFAULT -1,
     is_kline_closed UInt8 DEFAULT 1,
+    source LowCardinality(String) DEFAULT 'v1.0.0_api_klines',
+    type_method LowCardinality(String) DEFAULT 'API',
+    ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
+) ENGINE = ReplacingMergeTree(ingested_at)
+PARTITION BY (market_type, toYYYYMM(open_time))
+PRIMARY KEY (symbol, interval, open_time)
+ORDER BY (symbol, interval, open_time);
+
+-- Silver Klines - WebSocket WSIS (Dành riêng cho đối soát dữ liệu, cách ly hoàn toàn)
+CREATE TABLE IF NOT EXISTS db_silver_market.wsis_silver (
+    pair_id UInt8,
+    market_type LowCardinality(String),
+    symbol LowCardinality(String),
+    interval LowCardinality(String),
+    open_time DateTime64(3, 'UTC'),
+    close_time DateTime64(3, 'UTC'),
+    open Float64,
+    high Float64,
+    low Float64,
+    close Float64,
+    volume Float64,
+    quote_asset_volume Float64,
+    number_of_trades UInt32,
+    taker_buy_base_volume Float64,
+    taker_buy_quote_volume Float64,
+    first_trade_id Int64 DEFAULT -1,
+    last_trade_id Int64 DEFAULT -1,
+    is_kline_closed UInt8 DEFAULT 1,
+    source LowCardinality(String) DEFAULT 'wsis_stream',
+    type_method LowCardinality(String) DEFAULT 'WEBSOCKET',
     ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
 ) ENGINE = ReplacingMergeTree(ingested_at)
 PARTITION BY (market_type, toYYYYMM(open_time))

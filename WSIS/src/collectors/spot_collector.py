@@ -14,6 +14,7 @@ class SpotCombinedCollector(BaseWebSocketCollector):
         stream_list = []
         for sym in settings.symbols:
             s_lower = sym.lower()
+            stream_list.append(f"{s_lower}@kline_1m")
             stream_list.append(f"{s_lower}@kline_15m")
             stream_list.append(f"{s_lower}@aggTrade")
 
@@ -32,10 +33,12 @@ class SpotCombinedCollector(BaseWebSocketCollector):
             sym = data.get("s", "").upper()
             pid = SYMBOL_TO_PAIR_ID.get(sym, 0)
             open_time = int(k.get("t", 0))
+            interval = str(k.get("i", "1m"))
 
             kline_record = {
                 "pair_id": pid,
                 "symbol": sym,
+                "interval": interval,
                 "open_time": open_time,
                 "open": float(k.get("o", 0.0)),
                 "high": float(k.get("h", 0.0)),

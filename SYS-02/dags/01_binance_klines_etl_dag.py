@@ -15,14 +15,14 @@ except ImportError:
         from airflow.datasets import Dataset as Asset
 
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowFailException
+from airflow.exceptions import AirflowException, AirflowFailException
 from airflow.operators.empty import EmptyOperator
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 from sys02_orchestration.config import SYMBOL_TO_PAIR_ID
 from sys02_orchestration.operators.clickhouse_operator import ClickHouseTaskOperator
 from sys02_orchestration.operators.lakehouse_operator import LakehouseTaskOperator
-from sys02_orchestration.utils.data_quality import validate_klines_data, reconcile_api_with_wsis_bronze
+from sys02_orchestration.utils.data_quality import validate_klines_data, reconcile_api_with_wsis_bronze, reconcile_api_with_wsis_silver
 from sys02_orchestration.utils.code_version_tracker import get_pipeline_source_tag
 from sys02_orchestration.utils.error_tracer import ErrorTracer
 from sys02_orchestration.utils.circuit_breaker import check_and_trigger_circuit_breaker
@@ -165,8 +165,15 @@ def binance_klines_etl_pipeline():
             data_interval_start = context.get("data_interval_start")
             data_interval_end = context.get("data_interval_end")
             if data_interval_start and data_interval_end:
-                start_ms = int(data_interval_start.timestamp() * 1000)
-                end_ms = int(data_interval_end.timestamp() * 1000)
+                if data_interval_start == data_interval_end:
+                    # In Airflow 3 timetable, hourly trigger at H covers the completed hour [H - 1h, H)
+                    start_dt = data_interval_end - timedelta(hours=1)
+                    end_dt = data_interval_end - timedelta(milliseconds=1)
+                else:
+                    start_dt = data_interval_start
+                    end_dt = data_interval_end - timedelta(milliseconds=1) if data_interval_end > data_interval_start else data_interval_end
+                start_ms = int(start_dt.timestamp() * 1000)
+                end_ms = int(end_dt.timestamp() * 1000)
                 limit = 60
 
         if context.get("data_interval_start"):
@@ -233,7 +240,7 @@ def binance_klines_etl_pipeline():
                 for row in response.json()
             ]
             LOGGER.info("Extracted %d raw candles for %s from Binance", len(records), sym)
-            res = lakehouse.write_bronze_klines(records, sym, date_str, source=source_tag)
+            res = lakehouse.write_bronze_klines(records, sym, date_str, source=source_tag, stream_type="api")
             by_symbol[sym] = {
                 "status": "SUCCESS",
                 "bronze_output_path": res.get("bronze_output_path"),
@@ -249,76 +256,144 @@ def binance_klines_etl_pipeline():
             "source_tag": source_tag,
             "by_symbol": by_symbol,
             "total_records": total_count,
+            "start_time": etl_config.get("start_time"),
+            "end_time": etl_config.get("end_time"),
         }
 
     @task(task_id="transform_silver_parquet")
-    def transform_silver_task(bronze: dict) -> dict:
-        """Deduplicate, clean and transform Bronze JSON to partitioned Silver Parquet for all symbols."""
+    def transform_silver_task(bronze: dict, **context) -> dict:
+        """
+        Strictly isolated Silver-layer transformation:
+        1. Materializes API Bronze JSON into API Silver Parquet and ClickHouse silver_crypto_klines.
+        2. Materializes WSIS Bronze Stream into WSIS Silver Parquet and ClickHouse wsis_silver.
+        """
         date_str = bronze.get("date_str") or datetime.now(timezone.utc).date().isoformat()
         source_tag = bronze.get("source_tag") or get_pipeline_source_tag(__file__, component="api", metric_type="klines")
+        start_ms = bronze.get("start_time")
+        end_ms = bronze.get("end_time")
+
         lakehouse = LakehouseTaskOperator()
+        clickhouse = ClickHouseTaskOperator()
+        clickhouse.ensure_tables_exist()
 
         by_symbol = {}
-        all_records = []
+        all_api_records = []
+        by_symbol_wsis = {}
+
         for sym, s_data in bronze["by_symbol"].items():
-            records = s_data["records"]
-            for r in records:
+            api_records = s_data["records"]
+            for r in api_records:
                 r["source"] = source_tag
                 r["type_method"] = "API"
-            silver_res = lakehouse.process_bronze_to_silver(records, sym, date_str, source=source_tag)
+
+            # 1. Transform and persist API Silver
+            silver_api_res = lakehouse.process_bronze_to_silver(api_records, sym, date_str, source=source_tag, stream_type="api")
+            cleaned_api = silver_api_res.get("records", api_records)
+            clickhouse.insert_silver_klines(cleaned_api, table_name="silver_crypto_klines", source=source_tag, type_method="API")
+
             by_symbol[sym] = {
                 "status": "SUCCESS",
-                "silver_output_path": silver_res.get("silver_output_path"),
-                "cleaned_ticks": silver_res.get("cleaned_ticks", len(records)),
-                "records": silver_res.get("records", records),
-                "count": len(records),
+                "silver_output_path": silver_api_res.get("silver_output_path"),
+                "cleaned_ticks": len(cleaned_api),
+                "records": cleaned_api,
+                "count": len(cleaned_api),
             }
-            all_records.extend(silver_res.get("records", records))
+            all_api_records.extend(cleaned_api)
 
-        LOGGER.info("Successfully transformed %d total candles across %d symbols to Silver", len(all_records), len(by_symbol))
+            # 2. Materialize and persist WSIS Silver independently (Strict Isolation)
+            wsis_records = lakehouse.fetch_wsis_silver_records(sym, date_str, start_ms, end_ms)
+            if wsis_records:
+                clickhouse.insert_silver_klines(wsis_records, table_name="wsis_silver", source="wsis_stream", type_method="WEBSOCKET")
+            by_symbol_wsis[sym] = {
+                "records": wsis_records,
+                "count": len(wsis_records)
+            }
+
+        LOGGER.info("Transformed %d API candles and extracted WSIS Silver for %d symbols", len(all_api_records), len(by_symbol))
         return {
             "symbols": bronze["symbols"],
             "date_str": date_str,
             "source_tag": source_tag,
             "by_symbol": by_symbol,
-            "all_records": all_records,
-            "total_records": len(all_records),
+            "by_symbol_wsis": by_symbol_wsis,
+            "all_records": all_api_records,
+            "total_records": len(all_api_records),
+            "start_time": start_ms,
+            "end_time": end_ms
         }
 
     @task(task_id="validate_data_quality_gate")
-    def data_quality_gate_task(silver: dict) -> dict:
+    def data_quality_gate_task(silver: dict, **context) -> dict:
         """
-        Two-Level Data Quality Gate across all symbols:
+        Cross-Stream Data Quality Gate (Blocking):
         Level 1: Intra-source schema, null checks, and price boundaries on primary API records per symbol.
-        Level 2: Inter-source cross-reconciliation against secondary WSIS Bronze stream per symbol.
+        Level 2: Strict Cross-Reconciliation between API Silver and WSIS Silver:
+                 - Closed candles only (is_kline_closed == 1)
+                 - Price delta <= 0.1%
+                 - Volume ratio in [95%, 105%]
+                 - Composite accuracy score >= 95%
+        If FALSE -> Dispatches Telegram Alert via SYS-06 and fails task to trigger idempotent rerun at EXACT timestamp window.
         """
         validation_results = {}
         reconciliations = {}
+        failed_symbols = []
+
         for sym, s_data in silver["by_symbol"].items():
-            records = s_data["records"]
+            api_records = s_data["records"]
+
             # Level 1: Intra-Source Integrity Validation
-            result = validate_klines_data(records)
+            result = validate_klines_data(api_records)
             if not result.get("passed", False):
-                raise AirflowFailException(f"Data quality gate failed on API records for {sym}: {result}")
-            validation_results[sym] = result
-            LOGGER.info("Level 1 Quality Gate Passed for %s: %d API records validated", sym, len(records))
-
-            # Level 2: Inter-Source Cross-Reconciliation with WSIS Bronze
-            recon = reconcile_api_with_wsis_bronze(records, sym, tolerance_pct=0.5)
-            reconciliations[sym] = recon
-            LOGGER.info("Level 2 WSIS Cross-Reconciliation for %s: %s (%s)", sym, recon.get("status"), recon.get("details"))
-
-            if recon.get("status") == "DESYNC_WARNING":
                 send_sys06_alert({
-                    "alert_type": "DATA_QUALITY_WARNING",
-                    "level": "WARNING",
+                    "alert_type": "DATA_QUALITY",
+                    "level": "CRITICAL",
                     "source_system": "SYS-02",
-                    "event": "WSIS_API_PRICE_DRIFT",
-                    "deduplicate_key": f"sys02:wsis-desync:{sym}:{datetime.now(timezone.utc).strftime('%Y%m%d%H')}",
-                    "message": f"Data Quality Warning: Price drift between API and WSIS for {sym}: {recon.get('details')}",
+                    "event": "INTRA_API_DATA_QUALITY_FAILED",
+                    "deduplicate_key": f"sys02:intra-fail:{sym}:{silver.get('date_str')}",
+                    "message": f"🚨 Level 1 Quality Gate FAILED for {sym}: {result.get('errors')}. Auto-rerunning at window [{silver.get('start_time')} - {silver.get('end_time')}]...",
                     "channels": ["telegram"],
                     "action_url": "http://localhost:8085/dags/01_binance_klines_etl_dag/grid",
                 })
+                raise AirflowFailException(f"Level 1 Quality Gate failed on API records for {sym}: {result}")
+            validation_results[sym] = result
+
+            # Level 2: Inter-Source Cross-Reconciliation between API Silver and WSIS Silver
+            wsis_data = silver.get("by_symbol_wsis", {}).get(sym, {})
+            wsis_records = wsis_data.get("records", [])
+
+            recon = reconcile_api_with_wsis_silver(
+                api_records=api_records,
+                wsis_records=wsis_records,
+                symbol=sym,
+                price_tolerance_pct=0.1,
+                volume_min_ratio=95.0,
+                volume_max_ratio=105.0,
+                min_accuracy_score=95.0
+            )
+            reconciliations[sym] = recon
+            LOGGER.info("Level 2 Cross-Reconciliation for %s: %s | %s", sym, recon.get("status"), recon.get("details"))
+
+            if not recon.get("passed", False):
+                failed_symbols.append((sym, recon))
+
+        # If any symbol failed the Cross-Stream Quality Gate: Send Alert & Trigger Auto-Rerun
+        if failed_symbols:
+            error_details = []
+            for sym, r in failed_symbols:
+                error_details.append(f"{sym}: Accuracy={r.get('accuracy_score')}% ({r.get('details')})")
+                send_sys06_alert({
+                    "alert_type": "DATA_QUALITY",
+                    "level": "CRITICAL",
+                    "source_system": "SYS-02",
+                    "event": "CROSS_STREAM_RECONCILIATION_FAILED",
+                    "deduplicate_key": f"sys02:recon-fail:{sym}:{silver.get('date_str')}:{silver.get('start_time')}",
+                    "message": f"Data Quality Gate FAILED (Accuracy out of range [95-105%]) for {sym}: {r.get('details')}. Triggering automated rerun at EXACT timestamp window [{silver.get('start_time')} - {silver.get('end_time')}].",
+                    "channels": ["telegram"],
+                    "action_url": "http://localhost:8085/dags/01_binance_klines_etl_dag/grid",
+                })
+            raise AirflowException(
+                f"Data Quality Gate check FALSE for {len(failed_symbols)} symbols: {'; '.join(error_details)}"
+            )
 
         return {"validations": validation_results, "wsis_reconciliations": reconciliations}
 
