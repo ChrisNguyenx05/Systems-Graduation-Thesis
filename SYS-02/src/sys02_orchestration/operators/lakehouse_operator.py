@@ -33,19 +33,154 @@ class LakehouseTaskOperator:
             raise RuntimeError(f"MinIO write failed for s3://{bucket}/{object_name}: {exc}") from exc
         return f"s3://{bucket}/{object_name}"
 
-    def write_bronze_klines(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines") -> Dict[str, Any]:
+    def write_bronze_klines(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines", stream_type: str = "api") -> Dict[str, Any]:
         if not records:
             raise ValueError("Cannot write an empty Bronze batch")
-        path = self._write(self.bronze_bucket, f"klines/symbol={symbol}/date={date_str}/bronze.json", {"symbol": symbol, "source": source, "records": records})
-        return {"status": "SUCCESS", "bronze_output_path": path, "records": records, "source": source}
+        path = self._write(
+            self.bronze_bucket,
+            f"{stream_type}/klines/symbol={symbol}/date={date_str}/bronze.json",
+            {"symbol": symbol, "source": source, "stream_type": stream_type, "records": records}
+        )
+        return {"status": "SUCCESS", "bronze_output_path": path, "records": records, "source": source, "stream_type": stream_type}
 
-    def process_bronze_to_silver(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines") -> Dict[str, Any]:
+    def process_bronze_to_silver(self, records: List[Dict[str, Any]], symbol: str, date_str: str, source: str = "v1.0.0_api_klines", stream_type: str = "api") -> Dict[str, Any]:
         if not records:
             raise ValueError("Cannot transform an empty Bronze batch")
         fields = ("symbol", "timestamp", "open", "high", "low", "close", "volume")
-        cleaned = [{field: row[field] for field in fields} for row in records]
-        path = self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "source": source, "records": cleaned})
-        return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned, "source": source}
+        cleaned = [{field: row[field] for field in fields if field in row} for row in records]
+        for row in cleaned:
+            row["stream_type"] = stream_type
+            row["source"] = source
+        path = self._write(
+            self.silver_bucket,
+            f"{stream_type}/klines/symbol={symbol}/date={date_str}/silver.json",
+            {"symbol": symbol, "source": source, "stream_type": stream_type, "records": cleaned}
+        )
+        if stream_type == "api":
+            self._write(self.silver_bucket, f"klines/symbol={symbol}/date={date_str}/silver.json", {"symbol": symbol, "source": source, "records": cleaned})
+        return {"status": "SUCCESS", "silver_output_path": path, "cleaned_ticks": len(cleaned), "records": cleaned, "source": source, "stream_type": stream_type}
+
+    def fetch_wsis_silver_records(self, symbol: str, date_str: str, start_time_ms: Any = None, end_time_ms: Any = None, interval: str = "1m") -> List[Dict[str, Any]]:
+        """
+        Extract WSIS WebSocket stream records from MinIO Bronze, transform closed candles to Silver format,
+        and persist them to s3://crypto-silver/wsis/...
+        """
+        import gzip
+        client = self._client()
+        if not client.bucket_exists(self.bronze_bucket):
+            return []
+
+        if start_time_ms:
+            start_dt = datetime.fromtimestamp(int(start_time_ms) / 1000 if int(start_time_ms) > 100000000000 else int(start_time_ms), timezone.utc)
+            day_prefix = f"wsis/klines/year={start_dt.year}/month={start_dt.month:02d}/day={start_dt.day:02d}/"
+            wsis_files = list(client.list_objects(self.bronze_bucket, prefix=day_prefix, recursive=True))
+            if not wsis_files:
+                wsis_files = list(client.list_objects(self.bronze_bucket, prefix="wsis/klines/", recursive=True))
+        else:
+            wsis_files = list(client.list_objects(self.bronze_bucket, prefix="wsis/klines/", recursive=True))
+
+        if not wsis_files:
+            return []
+
+        sorted_files = sorted(wsis_files, key=lambda x: str(x.object_name), reverse=True)
+        records = []
+        for obj in sorted_files[:10]:
+            try:
+                resp = client.get_object(self.bronze_bucket, obj.object_name)
+                try:
+                    raw_bytes = resp.read()
+                    if obj.object_name.endswith(".gz"):
+                        raw_bytes = gzip.decompress(raw_bytes)
+                    for line in raw_bytes.decode("utf-8").splitlines():
+                        if not line.strip():
+                            continue
+                        row = json.loads(line)
+                        if row.get("symbol", "").upper() != symbol.upper():
+                            continue
+                        if not row.get("is_closed", True):
+                            continue
+                        if row.get("interval") and row.get("interval") != interval:
+                            continue
+                        ts = int(row.get("open_time", 0))
+                        if start_time_ms and ts < int(start_time_ms):
+                            continue
+                        if end_time_ms and ts > int(end_time_ms):
+                            continue
+                        records.append({
+                            "symbol": symbol.upper(),
+                            "timestamp": int(ts // 1000) if ts > 100000000000 else int(ts),
+                            "open_time": ts,
+                            "open": float(row.get("open", 0.0)),
+                            "high": float(row.get("high", 0.0)),
+                            "low": float(row.get("low", 0.0)),
+                            "close": float(row.get("close", 0.0)),
+                            "volume": float(row.get("volume", 0.0)),
+                            "interval": row.get("interval", interval),
+                            "is_closed": True,
+                            "source": "wsis_stream",
+                            "stream_type": "wsis"
+                        })
+                finally:
+                    resp.close()
+                    resp.release_conn()
+            except Exception:
+                continue
+
+        seen = set()
+        deduped = []
+        for r in records:
+            if r["timestamp"] not in seen:
+                seen.add(r["timestamp"])
+                deduped.append(r)
+
+        # Race-condition safeguard: If no records found but requested end_time_ms is very recent,
+        # wait 6 seconds once to let WSIS finish its 15-minute file upload to MinIO
+        if not deduped and end_time_ms:
+            now_ms = datetime.now(timezone.utc).timestamp() * 1000
+            if abs(now_ms - int(end_time_ms)) < 180000:  # within 3 minutes of now
+                import time
+                time.sleep(6)
+                # Re-check files
+                wsis_files = list(client.list_objects(self.bronze_bucket, prefix=day_prefix if 'day_prefix' in locals() else "wsis/klines/", recursive=True))
+                for obj in sorted(wsis_files, key=lambda x: str(x.object_name), reverse=True)[:5]:
+                    try:
+                        resp = client.get_object(self.bronze_bucket, obj.object_name)
+                        raw_bytes = gzip.decompress(resp.read()) if obj.object_name.endswith(".gz") else resp.read()
+                        for line in raw_bytes.decode("utf-8").splitlines():
+                            if not line.strip(): continue
+                            row = json.loads(line)
+                            if row.get("symbol", "").upper() != symbol.upper() or not row.get("is_closed", True): continue
+                            if row.get("interval") and row.get("interval") != interval: continue
+                            ts = int(row.get("open_time", 0))
+                            if start_time_ms and ts < int(start_time_ms): continue
+                            if end_time_ms and ts > int(end_time_ms): continue
+                            rec = {
+                                "symbol": symbol.upper(),
+                                "timestamp": int(ts // 1000) if ts > 100000000000 else int(ts),
+                                "open_time": ts,
+                                "open": float(row.get("open", 0.0)),
+                                "high": float(row.get("high", 0.0)),
+                                "low": float(row.get("low", 0.0)),
+                                "close": float(row.get("close", 0.0)),
+                                "volume": float(row.get("volume", 0.0)),
+                                "interval": row.get("interval", interval),
+                                "is_closed": True,
+                                "source": "wsis_stream",
+                                "stream_type": "wsis"
+                            }
+                            if rec["timestamp"] not in seen:
+                                seen.add(rec["timestamp"])
+                                deduped.append(rec)
+                    except Exception:
+                        pass
+
+        if deduped:
+            self._write(
+                self.silver_bucket,
+                f"wsis/klines/symbol={symbol}/date={date_str}/silver.json",
+                {"symbol": symbol, "source": "wsis_stream", "stream_type": "wsis", "records": deduped}
+            )
+        return deduped
 
     def write_market_metrics(self, bucket, dataset, run_key, records):
         source_map = {

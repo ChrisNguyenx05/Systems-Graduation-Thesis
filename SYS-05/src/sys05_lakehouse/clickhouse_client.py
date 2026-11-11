@@ -192,6 +192,84 @@ class ClickHouseManager:
                 ('AAPLBUSDT', 'AAPLB', 'USDT', 'new_coin', 1),
                 ('AMZNBUSDT', 'AMZNB', 'USDT', 'new_coin', 1),
                 ('DELLBUSDT', 'DELLB', 'USDT', 'new_coin', 1);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS default.silver_crypto_klines (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                open_time DateTime64(3, 'UTC'),
+                close_time DateTime64(3, 'UTC'),
+                open Float64,
+                high Float64,
+                low Float64,
+                close Float64,
+                volume Float64,
+                quote_asset_volume Float64 DEFAULT 0,
+                number_of_trades UInt32 DEFAULT 0,
+                taker_buy_base_volume Float64 DEFAULT 0,
+                taker_buy_quote_volume Float64 DEFAULT 0,
+                first_trade_id Int64 DEFAULT -1,
+                last_trade_id Int64 DEFAULT -1,
+                is_kline_closed UInt8 DEFAULT 1,
+                source LowCardinality(String) DEFAULT 'v1.0.0_api_klines',
+                type_method LowCardinality(String) DEFAULT 'API',
+                ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
+            )
+            ENGINE = ReplacingMergeTree(ingested_at)
+            PRIMARY KEY (symbol, open_time)
+            ORDER BY (symbol, open_time);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS default.wsis_silver (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                open_time DateTime64(3, 'UTC'),
+                close_time DateTime64(3, 'UTC'),
+                open Float64,
+                high Float64,
+                low Float64,
+                close Float64,
+                volume Float64,
+                quote_asset_volume Float64 DEFAULT 0,
+                number_of_trades UInt32 DEFAULT 0,
+                taker_buy_base_volume Float64 DEFAULT 0,
+                taker_buy_quote_volume Float64 DEFAULT 0,
+                first_trade_id Int64 DEFAULT -1,
+                last_trade_id Int64 DEFAULT -1,
+                is_kline_closed UInt8 DEFAULT 1,
+                source LowCardinality(String) DEFAULT 'wsis_stream',
+                type_method LowCardinality(String) DEFAULT 'WEBSOCKET',
+                ingested_at DateTime64(3, 'UTC') DEFAULT now64(3)
+            )
+            ENGINE = ReplacingMergeTree(ingested_at)
+            PRIMARY KEY (symbol, open_time)
+            ORDER BY (symbol, open_time);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS default.raw_binance_klines_api (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                market_type LowCardinality(String) DEFAULT 'SPOT',
+                interval LowCardinality(String) DEFAULT '1m',
+                source_type LowCardinality(String) DEFAULT 'API',
+                ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+                raw_payload String
+            )
+            ENGINE = MergeTree()
+            ORDER BY (symbol, interval, ingestion_time);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS default.raw_binance_klines_wsis (
+                pair_id UInt8 DEFAULT 0,
+                symbol LowCardinality(String),
+                market_type LowCardinality(String) DEFAULT 'SPOT',
+                interval LowCardinality(String) DEFAULT '15m',
+                source_type LowCardinality(String) DEFAULT 'WEBSOCKET',
+                ingestion_time DateTime64(3, 'UTC') DEFAULT now64(3),
+                raw_payload String
+            )
+            ENGINE = MergeTree()
+            ORDER BY (symbol, interval, ingestion_time);
             """
         ]
         try:

@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
+# Prioritize SYS-02 local .env
+env_local = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+if os.path.exists(env_local):
+    load_dotenv(env_local)
 load_dotenv()
 
 # Central registry of 6 Trading Pairs based on binance_market_data_reference.md
