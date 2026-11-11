@@ -175,6 +175,12 @@ def binance_market_data_ingestion_pipeline():
             "source_tag": source_tag,
         }
         LOGGER.info("Configured Ingestion Window: %s to %s for %d symbols", start_ms, end_ms, len(symbols))
+        print("================================================================================", flush=True)
+        print("🚀 [TASK 1/5: prepare_window_parameters] Ingestion Parameters Initialized", flush=True)
+        print(f"   • Symbols ({len(symbols)}): {', '.join(symbols)}", flush=True)
+        print(f"   • Window: {window_minutes} mins | Start: {start_ms} | End: {end_ms}", flush=True)
+        print(f"   • Source Tag: {source_tag}", flush=True)
+        print("================================================================================", flush=True)
         return config_payload
 
     @task(task_id="extract_bronze_market_data", execution_timeout=timedelta(minutes=10))
@@ -246,6 +252,13 @@ def binance_market_data_ingestion_pipeline():
 
         total_klines = sum(kline_counts.values())
         LOGGER.info("Bronze Extraction complete. Total klines: %d across %d symbols", total_klines, len(symbols))
+        print("================================================================================", flush=True)
+        print("📥 [TASK 2/5: extract_bronze_market_data] MinIO Bronze Ingestion Completed", flush=True)
+        for s in symbols:
+            print(f"   • [{s}] Fetched {kline_counts.get(s, 0)} klines -> {kline_paths.get(s)}", flush=True)
+        print(f"   • [Microstructure Metrics] Depth: {len(spot_metrics.get('order_book_depth', []))}, AggTrades: {len(spot_metrics.get('agg_trades', []))}, Liquidations: {len(spot_metrics.get('futures_liquidations', []))}", flush=True)
+        print(f"   ✅ Total Bronze: {total_klines} klines + 4 metric streams saved to MinIO Bronze", flush=True)
+        print("================================================================================", flush=True)
 
         return {
             "cfg": cfg,
@@ -296,6 +309,13 @@ def binance_market_data_ingestion_pipeline():
         silver_metrics_paths = metrics_persistence.write_layer("silver", run_key, raw_metrics)
 
         LOGGER.info("Silver transformation completed for %d symbols", len(symbols))
+        print("================================================================================", flush=True)
+        print("🔄 [TASK 3/5: transform_silver_market_data] Silver Transformation Completed", flush=True)
+        for s in symbols:
+            print(f"   • [{s}] Silver Klines: {silver_kline_counts.get(s, 0)} rows | WSIS WebSocket Sync: {wsis_counts.get(s, 0)} rows", flush=True)
+        print("   • ClickHouse Table `silver_crypto_klines` updated with cleaned Parquet records", flush=True)
+        print("   ✅ Bronze JSON transformed to clean Silver Parquet on MinIO & ClickHouse", flush=True)
+        print("================================================================================", flush=True)
         return {
             "cfg": cfg,
             "silver_kline_paths": silver_kline_paths,
@@ -404,6 +424,20 @@ def binance_market_data_ingestion_pipeline():
             "All Data Quality Gates (Level 1 Klines, Level 2 Cross-Reconciliation, Level 3 Metrics) PASSED successfully for all %d symbols.",
             len(symbols)
         )
+        print("================================================================================", flush=True)
+        print("🛡️ [TASK 4/5: validate_market_data_quality_gate] Multi-Tier Quality Gate Validated", flush=True)
+        print("   [LEVEL 1: Intra-Source Klines Schema & OHLC Boundaries]", flush=True)
+        for s in symbols:
+            v = validation_results.get(s, {})
+            print(f"     - {s}: PASSED={v.get('passed')} (Total: {v.get('total_records')}, Failed: {v.get('failed_records')})", flush=True)
+        print("   [LEVEL 2: Cross-Stream Reconciliation vs WSIS WebSocket Silver]", flush=True)
+        for s in symbols:
+            r = reconciliations.get(s, {})
+            print(f"     - {s}: Accuracy={r.get('accuracy_score', 0):.1f}% | PriceMatch={r.get('price_accuracy_pct', 0):.1f}% | VolMatch={r.get('volume_accuracy_pct', 0):.1f}%", flush=True)
+        print("   [LEVEL 3: Market Microstructure Metrics Validation]", flush=True)
+        print(f"     - Status: PASSED (agg_trades={metrics_val.get('agg_trades_count')}, depth={metrics_val.get('order_book_depth_count')})", flush=True)
+        print("   🏆 OVERALL GATE: PASSED (Score >= 95% -> Approved for Gold Layer Ingestion)", flush=True)
+        print("================================================================================", flush=True)
         return {
             "status": "PASSED",
             "silver_meta": silver_meta,
@@ -444,6 +478,14 @@ def binance_market_data_ingestion_pipeline():
             inserted_klines,
             metric_counts,
         )
+        print("================================================================================", flush=True)
+        print("🏆 [TASK 5/5: load_gold_market_data] Gold Lakehouse Materialization Completed", flush=True)
+        print("   ⭐ ONLY API VALUES LOADED TO GOLD (as per architectural contract)", flush=True)
+        print(f"   • ClickHouse Table `crypto_klines_gold`: +{inserted_klines} records inserted", flush=True)
+        print(f"   • Market Metrics Gold Tables: {metric_counts}", flush=True)
+        print(f"   • Table Freshness Assertion: {freshness.get('is_fresh')} (Total Rows: {freshness.get('row_count')})", flush=True)
+        print("   ✨ Pipeline Run Completed! Asset `binance_market_data_gold` Emitted!", flush=True)
+        print("================================================================================", flush=True)
         return {
             "inserted_klines": inserted_klines,
             "metric_counts": metric_counts,
