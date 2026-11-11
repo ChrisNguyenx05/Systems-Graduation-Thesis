@@ -84,7 +84,7 @@ class LakehouseTaskOperator:
 
         sorted_files = sorted(wsis_files, key=lambda x: str(x.object_name), reverse=True)
         records = []
-        for obj in sorted_files[:10]:
+        for obj in sorted_files[:100]:
             try:
                 resp = client.get_object(self.bronze_bucket, obj.object_name)
                 try:
